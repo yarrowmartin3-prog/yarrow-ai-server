@@ -2,92 +2,88 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Réglages Nova</title>
+  <title>Réglages Nova ⚙️</title>
   <style>
-    body{
-      font-family:system-ui,Arial,sans-serif;
-      background:#0f1220; color:#e9edf5;
-      margin:0; display:grid; place-items:center; min-height:100vh;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2em;
+      background: #f4f4f4;
+      color: #333;
     }
-    .card{
-      width:min(640px,92%); background:#171a2b;
-      border:1px solid #232848; border-radius:16px;
-      padding:24px; box-shadow:0 12px 32px rgba(0,0,0,.45);
-      display:grid; gap:16px;
+    h1 {
+      color: #222;
     }
-    h1{margin:0;font-size:22px}
-    label{font-size:14px; color:#9aa4b2; display:block; margin-bottom:6px}
-    input[type=text]{width:100%;padding:12px;border-radius:10px;border:1px solid #2c3153;background:#111529;color:#e9edf5}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    button{padding:10px 16px;border:0;border-radius:10px;font-weight:600;cursor:pointer}
-    .primary{background:#6ee7b7;color:#0a0d12}
-    .secondary{background:#1a1f37;color:#e9edf5;border:1px solid #2c3153}
-    .muted{font-size:13px;color:#9aa4b2}
-    #msg{margin-top:6px;font-size:14px}
-    .ok{color:#86efac} .err{color:#fca5a5}
+    label {
+      display: block;
+      margin-top: 1em;
+    }
+    input, select {
+      padding: 0.5em;
+      width: 100%;
+      max-width: 300px;
+    }
+    button {
+      margin-top: 1.5em;
+      padding: 0.7em 1.2em;
+      background: #6ee7b7;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #34d399;
+    }
+    a {
+      display: inline-block;
+      margin-top: 2em;
+      text-decoration: none;
+      color: #2563eb;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>⚙️ Réglages Nova</h1>
+  <h1>⚙️ Réglages Nova</h1>
 
-    <div>
-      <label for="api">URL du backend (Vercel)</label>
-      <input id="api" type="text" placeholder="https://yarrow-ai-server.vercel.app">
-    </div>
+  <label for="apiUrl">URL du Backend :</label>
+  <input type="text" id="apiUrl" placeholder="https://yarrow-ai-server.vercel.app" />
 
-    <div class="row">
-      <input type="checkbox" id="autoTts">
-      <label for="autoTts">Lecture automatique des réponses</label>
-    </div>
+  <label for="voice">Voix :</label>
+  <select id="voice">
+    <option value="default">Par défaut</option>
+    <option value="male">Voix masculine</option>
+    <option value="female">Voix féminine</option>
+  </select>
 
-    <div class="row">
-      <button class="primary" id="save">💾 Enregistrer</button>
-      <button class="secondary" id="test">🧪 Tester</button>
-      <a href="./" class="secondary" style="text-decoration:none;display:grid;place-items:center;padding:10px 16px;border-radius:10px">⬅️ Retour</a>
-    </div>
+  <label for="rate">Vitesse de lecture :</label>
+  <input type="range" id="rate" min="0.7" max="1.4" step="0.1" value="1" />
 
-    <div id="msg" class="muted"></div>
-  </div>
+  <button onclick="saveSettings()">💾 Sauvegarder</button>
+
+  <br>
+  <a href="./index.html">⬅️ Retour à Nova</a>
 
   <script>
-    const API_KEY = "API_BASE";
-    const AUTO_KEY = "AUTO_TTS";
-    const input = document.getElementById("api");
-    const chk = document.getElementById("autoTts");
-    const msg = document.getElementById("msg");
+    function saveSettings() {
+      const apiUrl = document.getElementById("apiUrl").value.trim();
+      const voice = document.getElementById("voice").value;
+      const rate = document.getElementById("rate").value;
 
-    // Charger valeurs sauvegardées
-    input.value = localStorage.getItem(API_KEY) || "https://yarrow-ai-server.vercel.app";
-    chk.checked = (localStorage.getItem(AUTO_KEY) ?? "1") === "1";
-
-    // Sauver
-    document.getElementById("save").onclick = ()=>{
-      const val = input.value.trim().replace(/\/+$/,'');
-      if(val) localStorage.setItem(API_KEY,val);
-      else localStorage.removeItem(API_KEY);
-      localStorage.setItem(AUTO_KEY, chk.checked?"1":"0");
-      msg.innerHTML = `<span class="ok">✅ Réglages enregistrés.</span>`;
-    };
-
-    // Tester
-    document.getElementById("test").onclick = async ()=>{
-      const base = (input.value||"").trim().replace(/\/+$/,'');
-      if(!base){ msg.innerHTML='<span class="err">⚠️ Entre une URL valide.</span>'; return; }
-      msg.textContent="Test en cours…";
-      try{
-        const r = await fetch(base+"/api/ask",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({question:"Ping",site:"hydro"})
-        });
-        const d = await r.json().catch(()=> ({}));
-        if(r.ok) msg.innerHTML=`<span class="ok">✅ Réponse : ${d.answer||"OK"}</span>`;
-        else msg.innerHTML=`<span class="err">❌ Erreur HTTP ${r.status}</span>`;
-      }catch(e){
-        msg.innerHTML=`<span class="err">❌ Réseau : ${e.message}</span>`;
+      if(apiUrl) {
+        localStorage.setItem("API_BASE", apiUrl);
       }
+      localStorage.setItem("VOICE", voice);
+      localStorage.setItem("RATE", rate);
+
+      alert("✅ Réglages sauvegardés !");
+    }
+
+    // Charger les réglages sauvegardés
+    window.onload = () => {
+      document.getElementById("apiUrl").value = localStorage.getItem("API_BASE") || "";
+      document.getElementById("voice").value = localStorage.getItem("VOICE") || "default";
+      document.getElementById("rate").value = localStorage.getItem("RATE") || 1;
     };
   </script>
 </body>
