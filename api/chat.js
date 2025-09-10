@@ -1,9 +1,27 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   try {
-    const { userText } = req.body || {};
-    if (!userText) return res.status(400).json({ error: "userText is required" });
+    const { userText, history = [] } = req.body || {};
+    if (!userText) {
+      return res.status(400).json({ error: "userText is required" });
+    }
+
+    const messages = [
+      {
+        role: "system",
+        content: `
+Tu es Yarrow Assistant : chaleureux, clair et concis.
+Tu aides sur Yarrow Beta 3D, les plantes, capteurs et le site web.
+Toujours : répondre en 1–2 phrases utiles, puis suggérer la prochaine action.
+Si tu ne sais pas, dis-le et propose une piste.
+        `
+      },
+      ...history, // garde les 10 derniers échanges envoyés par le client
+      { role: "user", content: userText }
+    ];
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -13,17 +31,14 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "Tu es un assistant utile et concis pour le site Yarrow Beta 3D." },
-          { role: "user", content: userText }
-        ],
-        temperature: 0.7
+        messages,
+        temperature: 0.6,
+        max_tokens: 300
       })
     });
 
     if (!r.ok) {
-      const err = await r.text();
-      return res.status(500).json({ error: "OpenAI error", detail: err });
+      return res.status(500).json({ error: "OpenAI error", detail: await r.text() });
     }
 
     const data = await r.json();
