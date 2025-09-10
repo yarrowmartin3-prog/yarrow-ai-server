@@ -33,6 +33,9 @@
         return;
       }
 
+      // ✅ Indicateur de chargement
+      answerBox.innerText = "⏳ Nova réfléchit...";
+
       try {
         const response = await fetch(`${API_BASE}/api/ask`, {
           method: "POST",
@@ -47,7 +50,7 @@
         if (data.ok) {
           answerBox.innerText = data.answer || "Pas de réponse reçue.";
         } else {
-          answerBox.innerText = "Erreur : " + (data.error || "Réponse invalide");
+          answerBox.innerText = "❌ Erreur : " + (data.error || "Réponse invalide");
         }
       } catch (err) {
         answerBox.innerText = "❌ Erreur de connexion : " + err.message;
