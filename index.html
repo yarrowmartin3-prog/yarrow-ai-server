@@ -41,25 +41,18 @@
     .row{display:flex; gap:10px; align-items:flex-end; max-width:100%}
     .row.ai{justify-content:flex-start}
     .row.user{justify-content:flex-end}
-    .avatar{
-      flex:0 0 36px; width:36px;height:36px;border-radius:10px;background:#1f2431;display:grid;place-items:center;
-      border:1px solid #242a3a;color:#9dd9ff;
-    }
-    .bubble{
-      max-width:min(80ch,75%); padding:12px 14px;border-radius:14px;word-wrap:break-word;white-space:pre-wrap;
-      border:1px solid #263048;
-    }
-    .ai .bubble{background:var(--bubble-ai)}
-    .user .bubble{background:var(--bubble-user)}
+    .avatar{flex:0 0 36px; width:36px;height:36px;border-radius:10px;background:#1f2431;display:grid;place-items:center;
+      border:1px solid #242a3a;color:#9dd9ff;}
+    .bubble{max-width:min(80ch,75%); padding:12px 14px;border-radius:14px;word-wrap:break-word;white-space:pre-wrap;
+      border:1px solid #263048;}
+    .ai .bubble{background:var(--bubble-ai)} .user .bubble{background:var(--bubble-user)}
     .typing{display:inline-flex; gap:6px}
     .dot{width:6px;height:6px;border-radius:50%; background:#9aa4b2; opacity:.6; animation:b 1.2s infinite}
     .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
     @keyframes b{0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-4px)}}
     footer{border-top:1px solid #202634; background:#0f131c}
     .controls{display:grid; gap:10px; padding:12px}
-    .inputbar{
-      display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center;
-    }
+    .inputbar{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center;}
     input[type="text"]{
       width:100%; padding:14px 16px; border-radius:12px; border:1px solid #263048;
       background:#0d111a; color:var(--text); outline:none;
@@ -71,10 +64,8 @@
       color:#0a0d12; font-weight:700; letter-spacing:.2px;
       box-shadow:0 8px 24px rgba(110,231,255,.25), inset 0 -6px 0 rgba(0,0,0,.08);
     }
-    button.secondary{
-      background:#161c29; color:#dbe7ff; border-color:#2a3550;
-      box-shadow:none;
-    }
+    button.secondary{background:#161c29; color:#dbe7ff; border-color:#2a3550; box-shadow:none;}
+    button.warn{background:#1b2130;color:#ffd2d2;border-color:#3a2a2a}
     button:disabled{opacity:.6; cursor:not-allowed}
     .ttsbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     select, input[type="range"]{
@@ -82,6 +73,7 @@
       padding:10px; border-radius:10px;
     }
     label{font-size:12px; color:var(--muted)}
+    .hint{color:var(--muted); font-size:12px}
   </style>
 </head>
 <body>
@@ -90,7 +82,7 @@
       <div class="logo">N</div>
       <div>
         <h1>Nova Assistant</h1>
-        <div class="sub">Chat + Voix – Nova te lit ses réponses ✨</div>
+        <div class="sub">Chat + Voix – optimisé iPhone ✨</div>
       </div>
     </header>
 
@@ -105,6 +97,8 @@
         </div>
 
         <div class="ttsbar">
+          <button id="primeBtn" class="warn">🔈 Activer la voix (iPhone)</button>
+          <span id="primeBadge" class="hint">Tape d’abord ici sur iPhone pour débloquer l’audio.</span>
           <label>Voix :
             <select id="voiceSelect"></select>
           </label>
@@ -121,10 +115,10 @@
   </div>
 
   <script>
-    // 🔗 Ton backend (modifie si besoin)
+    // 🔗 Backend
     const API_BASE = "https://yarrow-ai-server.vercel.app";
 
-    // ——— Elements
+    // DOM
     const chat = document.getElementById("chat");
     const input = document.getElementById("question");
     const sendBtn = document.getElementById("sendBtn");
@@ -133,8 +127,10 @@
     const rateInput = document.getElementById("rate");
     const volumeInput = document.getElementById("volume");
     const muteBtn = document.getElementById("muteBtn");
+    const primeBtn = document.getElementById("primeBtn");
+    const primeBadge = document.getElementById("primeBadge");
 
-    // ——— Chat helpers
+    // Chat helpers
     function addMsg(role, text, opts={}){
       const row = document.createElement("div");
       row.className = "row " + (role === "user" ? "user" : "ai");
@@ -159,10 +155,16 @@
       delete last.dataset.typing;
     }
 
-    // ——— TTS (Web Speech Synthesis)
+    // ——— iOS detection
+    const isIOS = /iP(hone|ad|od)/i.test(navigator.userAgent);
+
+    // ——— TTS (queue + iPhone priming)
     const synth = window.speechSynthesis;
     let voices = [];
     let speakingEnabled = true;
+    let ttsPrimed = !isIOS; // sur iOS, il faut cliquer le bouton pour passer à true
+    const speakQueue = [];
+    let speakingNow = false;
 
     function populateVoices(){
       voices = synth.getVoices().sort((a,b)=>{
@@ -183,7 +185,6 @@
         opt.textContent = `${v.name} (${v.lang})`;
         voiceSelect.appendChild(opt);
       });
-      // Préférer FR si dispo
       const firstFR = voices.find(v => v.lang.toLowerCase().startsWith("fr"));
       if (firstFR) voiceSelect.value = firstFR.name;
     }
@@ -192,28 +193,63 @@
       speechSynthesis.onvoiceschanged = populateVoices;
     }
 
-    function speak(text){
-      if (!speakingEnabled) return;
-      if (!synth) return;
+    function primeAudio(){
+      // Petite phrase “silencieuse” pour déverrouiller la lecture sur iOS
       try{
-        synth.cancel(); // stop any previous
-        const u = new SpeechSynthesisUtterance(text);
-        const v = voices.find(v => v.name === voiceSelect.value);
-        if (v) u.voice = v;
-        u.rate = parseFloat(rateInput.value || "1");
-        u.volume = parseFloat(volumeInput.value || "1");
-        u.lang = (v && v.lang) || "fr-FR";
+        synth.cancel();
+        const u = new SpeechSynthesisUtterance(" ");
+        u.volume = 0; // silence
+        u.onend = ()=>{ ttsPrimed = true; primeBtn.disabled = true; primeBtn.textContent = "🔈 Voix activée"; primeBadge.textContent = "La voix est prête.";}
         synth.speak(u);
-      }catch(e){ /* no-op */ }
+      }catch(e){}
+    }
+
+    primeBtn.addEventListener("click", primeAudio);
+    if (!isIOS){
+      primeBtn.style.display = "none";
+      primeBadge.style.display = "none";
+    }
+
+    function splitSentences(text){
+      // Découpe en phrases simples pour iOS
+      return (text || "").split(/(?<=[\.\!\?…])\s+/).filter(Boolean);
+    }
+
+    function enqueueSpeak(text){
+      if (!speakingEnabled || !synth) return;
+      splitSentences(text).forEach(p => speakQueue.push(p));
+      drainQueue();
+    }
+
+    function drainQueue(){
+      if (speakingNow || speakQueue.length===0) return;
+      if (!ttsPrimed && isIOS) return; // attendre le clic “Activer la voix”
+      speakingNow = true;
+      const sentence = speakQueue.shift();
+      const u = new SpeechSynthesisUtterance(sentence);
+      const v = voices.find(v => v.name === voiceSelect.value);
+      if (v) u.voice = v;
+      u.rate = parseFloat(rateInput.value || "1");
+      u.volume = parseFloat(volumeInput.value || "1");
+      u.lang = (v && v.lang) || "fr-FR";
+      u.onend = ()=>{ speakingNow = false; drainQueue(); };
+      u.onerror = ()=>{ speakingNow = false; drainQueue(); };
+      try{ synth.speak(u); }catch{ speakingNow=false; }
+    }
+
+    function stopSpeaking(){
+      try{ synth.cancel(); }catch{}
+      speakQueue.length = 0;
+      speakingNow = false;
     }
 
     muteBtn.addEventListener("click", ()=>{
       speakingEnabled = !speakingEnabled;
-      if (!speakingEnabled) { speechSynthesis.cancel(); }
+      if (!speakingEnabled) stopSpeaking();
       muteBtn.textContent = speakingEnabled ? "🔊 Son activé" : "🔇 Son coupé";
     });
 
-    // ——— ASR (Reconnaissance) si dispo (Chrome/Android)
+    // ——— ASR si dispo (Chrome/Android)
     let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recog;
     if (!Recognition){
@@ -256,7 +292,7 @@
         if (data.ok){
           const answer = data.answer || "Hmm… je n’ai rien reçu 🤔";
           replaceTypingWith(answer);
-          speak(answer);
+          enqueueSpeak(answer); // 🔊 lecture phrase par phrase
         } else {
           replaceTypingWith("❌ Erreur : " + (data.error || "Réponse invalide"));
         }
@@ -267,7 +303,7 @@
       }
     }
 
-    // ——— UX
+    // UX
     sendBtn.addEventListener("click", ()=>{
       const q = input.value.trim();
       input.value = "";
@@ -276,8 +312,10 @@
     });
     input.addEventListener("keydown", (e)=>{ if (e.key === "Enter") sendBtn.click(); });
 
-    // message d’accueil
-    addMsg("ai", "Salut 👋 Je suis Nova. Pose-moi une question — je te réponds à voix haute.");
+    // Message d’accueil
+    addMsg("ai", isIOS
+      ? "Salut 👋 Je suis Nova. Sur iPhone, tape d’abord « 🔈 Activer la voix », puis pose-moi une question."
+      : "Salut 👋 Je suis Nova. Pose-moi une question ; je te réponds à voix haute !");
   </script>
 </body>
 </html>
