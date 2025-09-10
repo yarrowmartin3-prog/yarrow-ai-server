@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nova – Réglages</title>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;margin:0;min-height:100svh;display:grid;place-items:center;background:#0f1115;color:#e8ecf1}
+    .card{width:min(680px,92%);background:#151923;border:1px solid #202634;border-radius:16px;padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.45)}
+    h1{margin:0 0 10px 0;font-size:20px}
+    label{display:block;margin-top:10px;color:#9aa4b2;font-size:14px}
+    input{width:100%;padding:12px;border-radius:12px;border:1px solid #263048;background:#0d111a;color:#e8ecf1;margin-top:6px}
+    .row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+    button{padding:12px 16px;border-radius:12px;border:1px solid #2a3650;cursor:pointer;background:#6ee7ff;color:#0a0d12;font-weight:700}
+    .secondary{background:#161c29;color:#dbe7ff;border-color:#2a3550}
+    .muted{color:#9aa4b2;font-size:13px;margin-top:8px}
+    .ok{color:#86efac} .err{color:#fecaca}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Réglages Nova</h1>
+    <p class="muted">Ici tu choisis l’URL de ton backend (Vercel) sans modifier le code du site.</p>
+
+    <label>URL du backend (ex: https://yarrow-ai-server.vercel.app)</label>
+    <input id="api" placeholder="https://…vercel.app" />
+
+    <div class="row">
+      <button id="save">💾 Enregistrer</button>
+      <button id="test" class="secondary">🧪 Tester</button>
+      <a href="./" style="align-self:center;color:#6ee7ff;text-decoration:none">⬅️ Retour à l’accueil</a>
+    </div>
+
+    <div id="msg" class="muted" role="status"></div>
+  </div>
+
+  <script>
+    const input = document.getElementById('api');
+    const msg = document.getElementById('msg');
+
+    // Charger la valeur déjà sauvée
+    const saved = localStorage.getItem('API_BASE');
+    if (saved) input.value = saved;
+
+    // Enregistrer
+    document.getElementById('save').onclick = () => {
+      const val = (input.value || '').trim().replace(/\/+$/,''); // retire / final
+      if (!val) { msg.innerHTML = '<span class="err">⚠️ Entre une URL valide.</span>'; return; }
+      try {
+        new URL(val);
+        localStorage.setItem('API_BASE', val);
+        msg.innerHTML = '<span class="ok">✅ Enregistré. Retourne à l’accueil et actualise la page.</span>';
+      } catch {
+        msg.innerHTML = '<span class="err">❌ URL invalide.</span>';
+      }
+    };
+
+    // Test rapide
+    document.getElementById('test').onclick = async () => {
+      const base = (input.value || '').trim().replace(/\/+$/,'');
+      if (!base) { msg.innerHTML = '<span class="err">⚠️ Entre une URL d’abord.</span>'; return; }
+      msg.textContent = 'Test en cours…';
+      try {
+        const r = await fetch(base + '/api/ask', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ question: 'Ping', site: 'hydro' })
+        });
+        const data = await r.json().catch(()=> ({}));
+        if (r.ok) msg.innerHTML = '<span class="ok">✅ OK : ' + (data.answer || 'réponse reçue') + '</span>';
+        else msg.innerHTML = '<span class="err">❌ Erreur HTTP ' + r.status + '</span>';
+      } catch (e) {
+        msg.innerHTML = '<span class="err">❌ Réseau : ' + e.message + '</span>';
+      }
+    };
+  </script>
+</body>
+</html>
