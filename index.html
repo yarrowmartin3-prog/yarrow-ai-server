@@ -24,9 +24,7 @@
     }
     header h1{font-size:18px; margin:0; letter-spacing:.3px}
     header .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-    details.settings{
-      margin-left:auto; font-size:14px; color:var(--muted);
-    }
+    details.settings{ margin-left:auto; font-size:14px; color:var(--muted); }
     details.settings summary{cursor:pointer; list-style:none}
     details.settings summary::-webkit-details-marker{display:none}
     .settings-box{
@@ -40,13 +38,8 @@
       padding:9px 12px; border:0; border-radius:10px; background:var(--accent); color:#0b0e1a; font-weight:600; cursor:pointer;
     }
 
-    /* Chat zone */
-    main{
-      width:100%; max-width:900px; margin:0 auto; padding:16px; flex:1; display:flex; flex-direction:column; gap:12px;
-    }
-    .scroll{
-      flex:1; overflow:auto; display:flex; flex-direction:column; gap:14px; padding-bottom:8px;
-    }
+    main{ width:100%; max-width:900px; margin:0 auto; padding:16px; flex:1; display:flex; flex-direction:column; gap:12px; }
+    .scroll{ flex:1; overflow:auto; display:flex; flex-direction:column; gap:14px; padding-bottom:8px; }
     .row{display:flex; gap:10px; align-items:flex-end}
     .row.me{justify-content:flex-end}
     .bubble{
@@ -61,22 +54,29 @@
       width:34px;height:34px;border-radius:50%;flex:0 0 34px; background:#12162a; border:1px solid #232848;
       display:grid; place-items:center; font-weight:700; color:#c7d2fe;
     }
-    .inputbar{
-      position:sticky; bottom:0; background:linear-gradient(0deg, rgba(15,18,32,1), rgba(15,18,32,.9));
-      padding:12px 16px; border-top:1px solid #22263d; display:flex; gap:10px; align-items:center;
-    }
-    .inputbar input{
-      flex:1; padding:14px 14px; border-radius:12px; border:1px solid #2c3153; background:#111529; color:#e9edf5;
-    }
-    .inputbar button{
-      padding:12px 16px; border:0; border-radius:12px; background:var(--accent); color:#0b0e1a; font-weight:700; cursor:pointer;
-    }
     .typing{display:none; color:var(--muted); font-size:13px; gap:6px; align-items:center}
     .typing.on{display:flex}
     .dots span{display:inline-block;width:6px;height:6px;background:var(--muted);border-radius:999px;margin-right:4px;opacity:.45;animation:b 1.2s infinite}
     .dots span:nth-child(2){animation-delay:.2s}
     .dots span:nth-child(3){animation-delay:.4s}
     @keyframes b{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+
+    .inputbar{
+      position:sticky; bottom:0; background:linear-gradient(0deg, rgba(15,18,32,1), rgba(15,18,32,.9));
+      padding:12px 16px; border-top:1px solid #22263d; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    .inputbar input{
+      flex:1; min-width:200px; padding:14px 14px; border-radius:12px; border:1px solid #2c3153; background:#111529; color:#e9edf5;
+    }
+    .btn{
+      padding:12px 14px; border:0; border-radius:12px; background:var(--accent); color:#0b0e1a; font-weight:700; cursor:pointer;
+    }
+    .btn.ghost{ background:#1a1f37; color:#e9edf5; border:1px solid #2c3153 }
+    .bar2{ width:100%; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    select, input[type="range"]{
+      background:#111529; color:#e9edf5; border:1px solid #2c3153; border-radius:10px; padding:8px;
+    }
+    label{font-size:12px; color:var(--muted)}
     a.link{color:#8ab4ff}
   </style>
 </head>
@@ -91,14 +91,13 @@
         <label>URL du backend (Vercel)</label>
         <input id="apiUrl" placeholder="https://yarrow-ai-server.vercel.app" />
         <button id="saveApi">Enregistrer</button>
-        <small>Astuce : tu peux remettre la valeur par défaut en laissant vide puis Enregistrer.</small>
+        <small>Astuce : laisse vide pour revenir à la valeur par défaut.</small>
       </div>
     </details>
   </header>
 
   <main>
     <div class="scroll" id="list">
-      <!-- message de bienvenue -->
       <div class="row nova">
         <div class="avatar">N</div>
         <div>
@@ -113,7 +112,22 @@
 
   <div class="inputbar">
     <input id="question" placeholder="Écris ta question et tape Entrée…" autocomplete="off" />
-    <button id="send">Envoyer</button>
+    <button class="btn" id="send">Envoyer</button>
+    <button class="btn ghost" id="speakBtn">🔊 Lire</button>
+    <button class="btn ghost" id="stopBtn">⏹️ Stop</button>
+    <button class="btn ghost" id="micBtn" title="Reconnaissance vocale">🎙️ Parler</button>
+
+    <div class="bar2">
+      <label>Voix
+        <select id="voice"></select>
+      </label>
+      <label>Vitesse
+        <input id="rate" type="range" min="0.7" max="1.4" value="1" step="0.05" />
+      </label>
+      <label>Volume
+        <input id="volume" type="range" min="0" max="1" value="1" step="0.05" />
+      </label>
+    </div>
   </div>
 
   <script>
@@ -128,9 +142,14 @@
     const sendBtn = document.getElementById("send");
     const apiInput = document.getElementById("apiUrl");
     const saveApi = document.getElementById("saveApi");
-    document.getElementById("seedTime").textContent = new Date().toLocaleTimeString();
+    const voiceSel = document.getElementById("voice");
+    const rateInp = document.getElementById("rate");
+    const volumeInp = document.getElementById("volume");
+    const speakBtn = document.getElementById("speakBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const micBtn = document.getElementById("micBtn");
 
-    // Préremplir le champ réglage
+    document.getElementById("seedTime").textContent = new Date().toLocaleTimeString();
     apiInput.value = localStorage.getItem("API_BASE") || DEFAULT_API;
 
     saveApi.onclick = () => {
@@ -153,7 +172,6 @@
       const when = new Date().toLocaleTimeString();
       const row = document.createElement("div");
       row.className = "row " + (me ? "me" : "nova");
-      const initials = me ? "Moi" : "N";
       row.innerHTML = me
         ? `<div><div class="bubble">${escapeHtml(text)}</div><div class="meta">${when}</div></div><div class="avatar">🧑</div>`
         : `<div class="avatar">N</div><div><div class="bubble">${text}</div><div class="meta">${when}</div></div>`;
@@ -161,15 +179,13 @@
       list.scrollTop = list.scrollHeight;
     }
 
+    // ---------- Appel backend ----------
     async function askNova(q){
       const question = q ?? input.value.trim();
       if(!question){ input.focus(); return; }
 
-      // Afficher ma bulle
       bubble(true, question);
       input.value = "";
-
-      // Nova "écrit…"
       typing.classList.add("on");
 
       try{
@@ -183,6 +199,9 @@
 
         if(res.ok && data && data.ok){
           bubble(false, escapeHtml(data.answer || "Pas de réponse."));
+          // lire automatiquement (si tu veux auto-lecture, décommente)
+          // speak(data.answer || "");
+          lastAnswer = data.answer || "";
         }else{
           const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
           bubble(false, `❌ Erreur : ${escapeHtml(msg)}`);
@@ -194,14 +213,101 @@
       }
     }
 
-    // Entrée + bouton
     sendBtn.addEventListener("click", () => askNova());
     input.addEventListener("keydown", e => {
       if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); askNova(); }
     });
 
-    // Petit test auto (facultatif)
-    // askNova("Bonjour Nova, es-tu là ?");
+    // ---------- Synthèse vocale ----------
+    let voices = [];
+    let lastAnswer = "";
+
+    function loadVoices(){
+      voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+      voiceSel.innerHTML = "";
+      if(!voices.length){
+        const opt = document.createElement("option");
+        opt.value = ""; opt.textContent = "Voix système (par défaut)";
+        voiceSel.appendChild(opt);
+        return;
+      }
+      const preferred = ["fr-CA","fr-FR","fr_FR","fr_CA"];
+      voices
+        .sort((a,b)=> (a.lang||"").localeCompare(b.lang||""))
+        .forEach(v=>{
+          const o = document.createElement("option");
+          o.value = v.name;
+          o.textContent = `${v.name} — ${v.lang}`;
+          voiceSel.appendChild(o);
+          if(preferred.some(p => (v.lang||"").includes(p))) o.selected = true;
+        });
+    }
+    if("speechSynthesis" in window){
+      loadVoices();
+      if (typeof speechSynthesis.onvoiceschanged !== "undefined"){
+        speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    }
+
+    function speak(text){
+      if(!("speechSynthesis" in window)){ flash("Synthèse vocale non disponible sur ce navigateur."); return; }
+      const t = text || lastAnswer || "";
+      if(!t){ flash("Rien à lire."); return; }
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(t);
+      const sel = voiceSel.value;
+      const v = voices.find(v=>v.name===sel);
+      if(v) u.voice = v;
+      u.rate = parseFloat(rateInp.value || "1");
+      u.volume = parseFloat(volumeInp.value || "1");
+      u.onerror = e => console.debug("TTS error", e);
+      speechSynthesis.speak(u);
+    }
+    function stopSpeak(){ if("speechSynthesis" in window) speechSynthesis.cancel(); }
+
+    speakBtn.onclick = () => speak();
+    stopBtn.onclick = () => stopSpeak();
+
+    // ---------- Micro (Web Speech API) ----------
+    let recognizing = false;
+    let rec;
+
+    function ensureRecognizer(){
+      const Cls = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!Cls){ flash("🎤 Reconnaissance vocale non disponible ici."); return null; }
+      if(rec) return rec;
+      rec = new Cls();
+      rec.lang = "fr-CA"; // ajuste si tu veux
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+
+      rec.onresult = (e)=>{
+        const txt = (e.results[0] && e.results[0][0] && e.results[0][0].transcript) || "";
+        if(txt){
+          input.value = txt;
+          askNova(txt);
+        }
+      };
+      rec.onerror = (e)=>{ recognizing = false; micBtn.textContent = "🎙️ Parler"; flash("Micro : " + (e.error||"erreur")); };
+      rec.onend = ()=>{ recognizing = false; micBtn.textContent = "🎙️ Parler"; };
+      return rec;
+    }
+
+    micBtn.onclick = ()=>{
+      const r = ensureRecognizer();
+      if(!r) return;
+      if(!recognizing){
+        try{
+          r.start();
+          recognizing = true;
+          micBtn.textContent = "🛑 Stop";
+        }catch(e){
+          flash("Impossible de démarrer le micro.");
+        }
+      }else{
+        try{ r.stop(); }catch{}
+      }
+    };
   </script>
 </body>
 </html>
