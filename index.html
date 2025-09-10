@@ -13,4 +13,46 @@
   </style>
 </head>
 <body>
-  <h1
+  <h1>Parle avec Nova 🚀</h1>
+
+  <input id="question" type="text" placeholder="Écris ta question ici..." />
+  <button onclick="askNova()">Envoyer</button>
+
+  <p><strong>Réponse de Nova :</strong></p>
+  <pre id="answer">...</pre>
+
+  <script>
+    const API_BASE = "https://yarrow-ai-server.vercel.app"; // ton backend Vercel
+
+    async function askNova() {
+      const question = document.getElementById("question").value;
+      const answerBox = document.getElementById("answer");
+
+      if (!question) {
+        answerBox.innerText = "⚠️ Écris une question avant d’envoyer.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/api/ask`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: question,
+            site: "hydro" // tu peux changer ce tag si besoin
+          })
+        });
+
+        const data = await response.json();
+        if (data.ok) {
+          answerBox.innerText = data.answer || "Pas de réponse reçue.";
+        } else {
+          answerBox.innerText = "Erreur : " + (data.error || "Réponse invalide");
+        }
+      } catch (err) {
+        answerBox.innerText = "❌ Erreur de connexion : " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
