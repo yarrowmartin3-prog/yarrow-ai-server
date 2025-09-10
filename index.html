@@ -5,79 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nova • Assistant</title>
   <style>
-    :root{
-      --bg:#0f1220; --panel:#171a2b; --accent:#6ee7b7; --muted:#9aa3b2;
-      --bubble-me:#2a2f45; --bubble-nova:#1e2236;
-    }
+    :root{ --bg:#0f1220; --panel:#171a2b; --accent:#6ee7b7; --muted:#9aa3b2;
+      --bubble-me:#2a2f45; --bubble-nova:#1e2236; }
     *{box-sizing:border-box}
-    body{
-      margin:0; background:var(--bg); color:#e9edf5;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      display:flex; flex-direction:column; min-height:100dvh;
-    }
-    header{
-      position:sticky; top:0; z-index:5;
+    body{ margin:0; background:var(--bg); color:#e9edf5;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      display:flex; flex-direction:column; min-height:100dvh; }
+    header{ position:sticky; top:0; z-index:5;
       background:linear-gradient(180deg,rgba(23,26,43,.95),rgba(23,26,43,.85));
       backdrop-filter: blur(8px);
       padding:14px 16px; border-bottom:1px solid #22263d;
-      display:flex; align-items:center; gap:10px;
-    }
+      display:flex; align-items:center; gap:10px; }
     header h1{font-size:18px; margin:0; letter-spacing:.3px}
     header .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
     details.settings{ margin-left:auto; font-size:14px; color:var(--muted); }
     details.settings summary{cursor:pointer; list-style:none}
     details.settings summary::-webkit-details-marker{display:none}
-    .settings-box{
-      margin-top:10px; background:var(--panel); border:1px solid #232848; border-radius:12px; padding:12px;
-      display:grid; gap:8px; min-width:260px;
-    }
-    .settings-box input{
-      width:100%; padding:10px 12px; border:1px solid #2c3153; border-radius:10px; background:#111529; color:#e9edf5;
-    }
-    .settings-box button{
-      padding:9px 12px; border:0; border-radius:10px; background:var(--accent); color:#0b0e1a; font-weight:600; cursor:pointer;
-    }
+    .settings-box{ margin-top:10px; background:var(--panel); border:1px solid #232848; border-radius:12px; padding:12px;
+      display:grid; gap:8px; min-width:260px; }
+    .settings-box input{ width:100%; padding:10px 12px; border:1px solid #2c3153; border-radius:10px; background:#111529; color:#e9edf5; }
+    .settings-box button{ padding:9px 12px; border:0; border-radius:10px; background:var(--accent); color:#0b0e1a; font-weight:600; cursor:pointer; }
+    .row-setting{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px}
 
     main{ width:100%; max-width:900px; margin:0 auto; padding:16px; flex:1; display:flex; flex-direction:column; gap:12px; }
     .scroll{ flex:1; overflow:auto; display:flex; flex-direction:column; gap:14px; padding-bottom:8px; }
     .row{display:flex; gap:10px; align-items:flex-end}
     .row.me{justify-content:flex-end}
-    .bubble{
-      max-width:min(75%, 580px); padding:12px 14px; border-radius:16px;
+    .bubble{ max-width:min(75%,580px); padding:12px 14px; border-radius:16px;
       line-height:1.45; font-size:15px; white-space:pre-wrap; word-wrap:break-word;
-      box-shadow:0 4px 14px rgba(0,0,0,.2); border:1px solid #232848;
-    }
-    .me .bubble{background:var(--bubble-me)}
-    .nova .bubble{background:var(--bubble-nova)}
+      box-shadow:0 4px 14px rgba(0,0,0,.2); border:1px solid #232848; }
+    .me .bubble{background:var(--bubble-me)} .nova .bubble{background:var(--bubble-nova)}
     .meta{font-size:12px; color:var(--muted); margin-top:4px}
-    .avatar{
-      width:34px;height:34px;border-radius:50%;flex:0 0 34px; background:#12162a; border:1px solid #232848;
-      display:grid; place-items:center; font-weight:700; color:#c7d2fe;
-    }
+    .avatar{ width:34px;height:34px;border-radius:50%;flex:0 0 34px; background:#12162a; border:1px solid #232848;
+      display:grid; place-items:center; font-weight:700; color:#c7d2fe; }
     .typing{display:none; color:var(--muted); font-size:13px; gap:6px; align-items:center}
     .typing.on{display:flex}
     .dots span{display:inline-block;width:6px;height:6px;background:var(--muted);border-radius:999px;margin-right:4px;opacity:.45;animation:b 1.2s infinite}
-    .dots span:nth-child(2){animation-delay:.2s}
-    .dots span:nth-child(3){animation-delay:.4s}
+    .dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
     @keyframes b{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
 
-    .inputbar{
-      position:sticky; bottom:0; background:linear-gradient(0deg, rgba(15,18,32,1), rgba(15,18,32,.9));
-      padding:12px 16px; border-top:1px solid #22263d; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-    }
-    .inputbar input{
-      flex:1; min-width:200px; padding:14px 14px; border-radius:12px; border:1px solid #2c3153; background:#111529; color:#e9edf5;
-    }
-    .btn{
-      padding:12px 14px; border:0; border-radius:12px; background:var(--accent); color:#0b0e1a; font-weight:700; cursor:pointer;
-    }
+    .inputbar{ position:sticky; bottom:0; background:linear-gradient(0deg,rgba(15,18,32,1),rgba(15,18,32,.9));
+      padding:12px 16px; border-top:1px solid #22263d; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .inputbar input{ flex:1; min-width:200px; padding:14px 14px; border-radius:12px; border:1px solid #2c3153; background:#111529; color:#e9edf5; }
+    .btn{ padding:12px 14px; border:0; border-radius:12px; background:var(--accent); color:#0b0e1a; font-weight:700; cursor:pointer; }
     .btn.ghost{ background:#1a1f37; color:#e9edf5; border:1px solid #2c3153 }
     .bar2{ width:100%; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    select, input[type="range"]{
-      background:#111529; color:#e9edf5; border:1px solid #2c3153; border-radius:10px; padding:8px;
-    }
+    select, input[type="range"]{ background:#111529; color:#e9edf5; border:1px solid #2c3153; border-radius:10px; padding:8px; }
     label{font-size:12px; color:var(--muted)}
-    a.link{color:#8ab4ff}
   </style>
 </head>
 <body>
@@ -90,6 +64,10 @@
       <div class="settings-box">
         <label>URL du backend (Vercel)</label>
         <input id="apiUrl" placeholder="https://yarrow-ai-server.vercel.app" />
+        <div class="row-setting">
+          <input type="checkbox" id="autoTts" />
+          <label for="autoTts">Lecture automatique des réponses</label>
+        </div>
         <button id="saveApi">Enregistrer</button>
         <small>Astuce : laisse vide pour revenir à la valeur par défaut.</small>
       </div>
@@ -106,7 +84,6 @@
         </div>
       </div>
     </div>
-
     <div class="typing" id="typing"><div class="dots"><span></span><span></span><span></span></div> Nova écrit…</div>
   </main>
 
@@ -134,6 +111,7 @@
     // ---------- Configuration ----------
     const DEFAULT_API = "https://yarrow-ai-server.vercel.app";
     const API_BASE = () => (localStorage.getItem("API_BASE") || DEFAULT_API).replace(/\/+$/,'');
+    const AUTO_TTS_KEY = "AUTO_TTS";
 
     // ---------- DOM ----------
     const list = document.getElementById("list");
@@ -141,6 +119,7 @@
     const input = document.getElementById("question");
     const sendBtn = document.getElementById("send");
     const apiInput = document.getElementById("apiUrl");
+    const autoTtsChk = document.getElementById("autoTts");
     const saveApi = document.getElementById("saveApi");
     const voiceSel = document.getElementById("voice");
     const rateInp = document.getElementById("rate");
@@ -151,12 +130,14 @@
 
     document.getElementById("seedTime").textContent = new Date().toLocaleTimeString();
     apiInput.value = localStorage.getItem("API_BASE") || DEFAULT_API;
+    autoTtsChk.checked = (localStorage.getItem(AUTO_TTS_KEY) ?? "1") === "1"; // actif par défaut
 
     saveApi.onclick = () => {
       const v = apiInput.value.trim();
       if (v) localStorage.setItem("API_BASE", v);
       else localStorage.removeItem("API_BASE");
-      flash(`API = ${API_BASE()}`);
+      localStorage.setItem(AUTO_TTS_KEY, autoTtsChk.checked ? "1" : "0");
+      flash(`Réglages enregistrés • API = ${API_BASE()} • Auto-lecture = ${autoTtsChk.checked ? "ON" : "OFF"}`);
     };
 
     function flash(msg){
@@ -198,8 +179,11 @@
         const data = await res.json().catch(() => ({}));
 
         if(res.ok && data && data.ok){
-          bubble(false, escapeHtml(data.answer || "Pas de réponse."));
-          lastAnswer = data.answer || "";
+          const answer = data.answer || "Pas de réponse.";
+          bubble(false, escapeHtml(answer));
+          lastAnswer = answer;
+          // 🔊 Lecture automatique si activée
+          if (autoTtsChk.checked) speak(answer);
         }else{
           const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
           bubble(false, `❌ Erreur : ${escapeHtml(msg)}`);
@@ -251,6 +235,8 @@
       if(!("speechSynthesis" in window)){ flash("Synthèse vocale non disponible."); return; }
       const t = text || lastAnswer || "";
       if(!t){ flash("Rien à lire."); return; }
+      // iPhone/iPad : besoin d'une interaction utilisateur préalable.
+      // Le clic sur Envoyer compte généralement comme interaction, sinon appuyer une fois sur 🔊 Lire.
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(t);
       const sel = voiceSel.value;
@@ -274,7 +260,7 @@
       if(!Cls){ flash("🎤 Reconnaissance vocale non dispo."); return null; }
       if(rec) return rec;
       rec = new Cls();
-      rec.lang = "fr-CA"; 
+      rec.lang = "fr-CA"; // ajuste si tu veux
       rec.interimResults = false;
       rec.maxAlternatives = 1;
 
@@ -291,9 +277,8 @@
       const r = ensureRecognizer();
       if(!r) return;
       if(!recognizing){
-        try{
-          r.start(); recognizing = true; micBtn.textContent = "🛑 Stop";
-        }catch(e){ flash("Impossible de démarrer le micro."); }
+        try{ r.start(); recognizing = true; micBtn.textContent = "🛑 Stop"; }
+        catch(e){ flash("Impossible de démarrer le micro."); }
       }else{ try{ r.stop(); }catch{} }
     };
   </script>
