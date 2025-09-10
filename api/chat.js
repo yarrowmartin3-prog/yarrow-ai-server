@@ -5,21 +5,20 @@ export default async function handler(req, res) {
 
   try {
     const { userText, history = [] } = req.body || {};
-    if (!userText) {
-      return res.status(400).json({ error: "userText is required" });
-    }
+    if (!userText) return res.status(400).json({ error: "userText is required" });
 
     const messages = [
       {
         role: "system",
         content: `
-Tu es Yarrow Assistant : chaleureux, clair et concis.
-Tu aides sur Yarrow Beta 3D, les plantes, capteurs et le site web.
-Toujours : répondre en 1–2 phrases utiles, puis suggérer la prochaine action.
-Si tu ne sais pas, dis-le et propose une piste.
-        `
+Tu es Yarrow Assistant : chaleureux, clair et concret.
+Contexte: Yarrow Beta 3D (plantes, capteurs, interface web).
+Style: phrases courtes, propose toujours la prochaine action.
+Si tu n'es pas sûr, dis-le et propose 1 solution.
+Réponds dans la langue de l'utilisateur.
+`.trim()
       },
-      ...history, // garde les 10 derniers échanges envoyés par le client
+      ...history,                       // OK if empty (front not sending it yet)
       { role: "user", content: userText }
     ];
 
@@ -30,7 +29,7 @@ Si tu ne sais pas, dis-le et propose une piste.
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",                // ← smarter model (you can switch to gpt-4o-mini to save cost)
         messages,
         temperature: 0.6,
         max_tokens: 300
