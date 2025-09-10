@@ -1,7 +1,13 @@
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open("nova-cache").then(cache => {
-      return cache.addAll(["/", "/index.html"]);
+      return cache.addAll([
+        "/",
+        "/index.html",
+        "/settings.html",
+        "/simulator.html",
+        "/manifest.webmanifest"
+      ]);
     })
   );
 });
