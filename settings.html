@@ -1,76 +1,92 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nova – Réglages</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Réglages Nova</title>
   <style>
-    body{font-family:system-ui,Arial,sans-serif;margin:0;min-height:100svh;display:grid;place-items:center;background:#0f1115;color:#e8ecf1}
-    .card{width:min(680px,92%);background:#151923;border:1px solid #202634;border-radius:16px;padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.45)}
-    h1{margin:0 0 10px 0;font-size:20px}
-    label{display:block;margin-top:10px;color:#9aa4b2;font-size:14px}
-    input{width:100%;padding:12px;border-radius:12px;border:1px solid #263048;background:#0d111a;color:#e8ecf1;margin-top:6px}
-    .row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-    button{padding:12px 16px;border-radius:12px;border:1px solid #2a3650;cursor:pointer;background:#6ee7ff;color:#0a0d12;font-weight:700}
-    .secondary{background:#161c29;color:#dbe7ff;border-color:#2a3550}
-    .muted{color:#9aa4b2;font-size:13px;margin-top:8px}
-    .ok{color:#86efac} .err{color:#fecaca}
+    body{
+      font-family:system-ui,Arial,sans-serif;
+      background:#0f1220; color:#e9edf5;
+      margin:0; display:grid; place-items:center; min-height:100vh;
+    }
+    .card{
+      width:min(640px,92%); background:#171a2b;
+      border:1px solid #232848; border-radius:16px;
+      padding:24px; box-shadow:0 12px 32px rgba(0,0,0,.45);
+      display:grid; gap:16px;
+    }
+    h1{margin:0;font-size:22px}
+    label{font-size:14px; color:#9aa4b2; display:block; margin-bottom:6px}
+    input[type=text]{width:100%;padding:12px;border-radius:10px;border:1px solid #2c3153;background:#111529;color:#e9edf5}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    button{padding:10px 16px;border:0;border-radius:10px;font-weight:600;cursor:pointer}
+    .primary{background:#6ee7b7;color:#0a0d12}
+    .secondary{background:#1a1f37;color:#e9edf5;border:1px solid #2c3153}
+    .muted{font-size:13px;color:#9aa4b2}
+    #msg{margin-top:6px;font-size:14px}
+    .ok{color:#86efac} .err{color:#fca5a5}
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Réglages Nova</h1>
-    <p class="muted">Ici tu choisis l’URL de ton backend (Vercel) sans modifier le code du site.</p>
+    <h1>⚙️ Réglages Nova</h1>
 
-    <label>URL du backend (ex: https://yarrow-ai-server.vercel.app)</label>
-    <input id="api" placeholder="https://…vercel.app" />
-
-    <div class="row">
-      <button id="save">💾 Enregistrer</button>
-      <button id="test" class="secondary">🧪 Tester</button>
-      <a href="./" style="align-self:center;color:#6ee7ff;text-decoration:none">⬅️ Retour à l’accueil</a>
+    <div>
+      <label for="api">URL du backend (Vercel)</label>
+      <input id="api" type="text" placeholder="https://yarrow-ai-server.vercel.app">
     </div>
 
-    <div id="msg" class="muted" role="status"></div>
+    <div class="row">
+      <input type="checkbox" id="autoTts">
+      <label for="autoTts">Lecture automatique des réponses</label>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="save">💾 Enregistrer</button>
+      <button class="secondary" id="test">🧪 Tester</button>
+      <a href="./" class="secondary" style="text-decoration:none;display:grid;place-items:center;padding:10px 16px;border-radius:10px">⬅️ Retour</a>
+    </div>
+
+    <div id="msg" class="muted"></div>
   </div>
 
   <script>
-    const input = document.getElementById('api');
-    const msg = document.getElementById('msg');
+    const API_KEY = "API_BASE";
+    const AUTO_KEY = "AUTO_TTS";
+    const input = document.getElementById("api");
+    const chk = document.getElementById("autoTts");
+    const msg = document.getElementById("msg");
 
-    // Charger la valeur déjà sauvée
-    const saved = localStorage.getItem('API_BASE');
-    if (saved) input.value = saved;
+    // Charger valeurs sauvegardées
+    input.value = localStorage.getItem(API_KEY) || "https://yarrow-ai-server.vercel.app";
+    chk.checked = (localStorage.getItem(AUTO_KEY) ?? "1") === "1";
 
-    // Enregistrer
-    document.getElementById('save').onclick = () => {
-      const val = (input.value || '').trim().replace(/\/+$/,''); // retire / final
-      if (!val) { msg.innerHTML = '<span class="err">⚠️ Entre une URL valide.</span>'; return; }
-      try {
-        new URL(val);
-        localStorage.setItem('API_BASE', val);
-        msg.innerHTML = '<span class="ok">✅ Enregistré. Retourne à l’accueil et actualise la page.</span>';
-      } catch {
-        msg.innerHTML = '<span class="err">❌ URL invalide.</span>';
-      }
+    // Sauver
+    document.getElementById("save").onclick = ()=>{
+      const val = input.value.trim().replace(/\/+$/,'');
+      if(val) localStorage.setItem(API_KEY,val);
+      else localStorage.removeItem(API_KEY);
+      localStorage.setItem(AUTO_KEY, chk.checked?"1":"0");
+      msg.innerHTML = `<span class="ok">✅ Réglages enregistrés.</span>`;
     };
 
-    // Test rapide
-    document.getElementById('test').onclick = async () => {
-      const base = (input.value || '').trim().replace(/\/+$/,'');
-      if (!base) { msg.innerHTML = '<span class="err">⚠️ Entre une URL d’abord.</span>'; return; }
-      msg.textContent = 'Test en cours…';
-      try {
-        const r = await fetch(base + '/api/ask', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ question: 'Ping', site: 'hydro' })
+    // Tester
+    document.getElementById("test").onclick = async ()=>{
+      const base = (input.value||"").trim().replace(/\/+$/,'');
+      if(!base){ msg.innerHTML='<span class="err">⚠️ Entre une URL valide.</span>'; return; }
+      msg.textContent="Test en cours…";
+      try{
+        const r = await fetch(base+"/api/ask",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({question:"Ping",site:"hydro"})
         });
-        const data = await r.json().catch(()=> ({}));
-        if (r.ok) msg.innerHTML = '<span class="ok">✅ OK : ' + (data.answer || 'réponse reçue') + '</span>';
-        else msg.innerHTML = '<span class="err">❌ Erreur HTTP ' + r.status + '</span>';
-      } catch (e) {
-        msg.innerHTML = '<span class="err">❌ Réseau : ' + e.message + '</span>';
+        const d = await r.json().catch(()=> ({}));
+        if(r.ok) msg.innerHTML=`<span class="ok">✅ Réponse : ${d.answer||"OK"}</span>`;
+        else msg.innerHTML=`<span class="err">❌ Erreur HTTP ${r.status}</span>`;
+      }catch(e){
+        msg.innerHTML=`<span class="err">❌ Réseau : ${e.message}</span>`;
       }
     };
   </script>
