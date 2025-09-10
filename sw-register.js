@@ -1,14 +1,20 @@
-// sw-register.js
-(async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      if ('periodicSync' in reg) {
-        try { await reg.periodicSync.register('sync-checklist', { minInterval: 6*60*60*1000 }); } catch {}
-      }
-      console.log('SW registered', reg.scope);
-    } catch (e) {
-      console.warn('SW registration failed', e);
+{
+  "name": "Nova Assistant",
+  "short_name": "Nova",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0e1118",
+  "theme_color": "#0e1118",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
-  }
-})();
+  ]
+}
