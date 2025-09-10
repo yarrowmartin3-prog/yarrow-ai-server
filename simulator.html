@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AutoBox • Simulateur</title>
+<style>
+  :root{
+    --bg:#0e1118; --panel:#151a23; --line:#222a3c; --text:#e8eef7; --muted:#9aa4b2;
+    --accent:#6ee7b7; --accent2:#8b5cf6; --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,rgba(110,231,183,.06),transparent),#0e1118;color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+  .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;min-height:100vh}
+  aside{background:var(--panel);border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:14px}
+  h1{font-size:18px;margin:0 0 8px 0}
+  .muted{color:var(--muted);font-size:12px}
+  .card{background:#121826;border:1px solid var(--line);border-radius:14px;padding:12px}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+  input[type="range"],select,input[type="number"]{width:100%;background:#0e1422;color:var(--text);border:1px solid #25314a;border-radius:10px;padding:8px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .switch{display:flex;align-items:center;gap:10px}
+  .switch input{width:46px}
+  button{padding:10px 12px;border-radius:10px;border:1px solid #2a3550;background:linear-gradient(180deg,var(--accent),#55d5a8);color:#0b0e12;font-weight:700;cursor:pointer}
+  button.secondary{background:#151c2c;color:#dbe7ff;border-color:#2a3550}
+  button.danger{background:#2a1b1b;color:#ffd3d3;border-color:#542a2a}
+  header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,rgba(139,92,246,.08),rgba(110,231,183,.08))}
+  .logo{width:36px;height:36px;border-radius:10px;background:conic-gradient(from 210deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#0b0e12;font-weight:900}
+  main{padding:16px;display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+  .screen{background:#0f1524;border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px}
+  .screen .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .tile{background:#121a2c;border:1px solid #25314a;border-radius:12px;padding:10px;text-align:center}
+  .tile .big{font-size:22px;font-weight:800}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#0f172a;border:1px solid #25314a;padding:6px 10px;border-radius:999px;font-size:12px}
+  canvas{width:100%;height:auto;background:#0b0f18;border:1px solid var(--line);border-radius:16px}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .shot{background:#0f1524;border:1px solid #25314a;border-radius:10px;padding:6px}
+  .shot img{width:100%;border-radius:8px;display:block}
+  .hint{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">A</div>
+  <div>
+    <div style="font-weight:800">AutoBox • Simulateur</div>
+    <div class="muted">Affichage live + simulation visuelle (niveau d’eau, LEDs, ventilos, plante)</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside>
+    <h1>Contrôles</h1>
+    <div class="card">
+      <label>Intensité LED (%)</label>
+      <input id="led" type="range" min="0" max="100" value="60">
+      <label>Spectre (Teinte)</label>
+      <input id="hue" type="range" min="0" max="360" value="200">
+      <div class="row">
+        <div>
+          <label>Ventilos (RPM)</label>
+          <input id="fan" type="range" min="0" max="3000" value="1200">
+        </div>
+        <div>
+          <label>Niveau d’eau (%)</label>
+          <input id="water" type="range" min="0" max="100" value="65">
+        </div>
+      </div>
+      <div class="row">
+        <div class="switch">
+          <input id="pump" type="checkbox" checked>
+          <label for="pump">Pompe ON/OFF</label>
+        </div>
+        <div class="switch">
+          <input id="autoGrow" type="checkbox">
+          <label for="autoGrow">Croissance auto</label>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Temp. cible (°C)</label>
+          <input id="tSet" type="number" min="10" max="35" value="24">
+        </div>
+        <div>
+          <label>Humidité cible (%)</label>
+          <input id="hSet" type="number" min="20" max="95" value="55">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="bar">
+        <button id="start">▶️ Démarrer</button>
+        <button id="stop" class="secondary">⏸️ Pause</button>
+        <button id="snapshot" class="secondary">📸 Caméra</button>
+        <button id="reset" class="danger">♻️ Reset</button>
+      </div>
+      <div class="hint">Le bouton 📸 capture un “instantané” du canvas ci-dessous.</div>
+    </div>
+
+    <div class="card">
+      <label>Bruitage capteurs (±)</label>
+      <input id="noise" type="range" min="0" max="10" value="3">
+      <div class="hint">Ajoute de petites variations pseudo-réalistes sur les capteurs.</div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- Écran de la boîte -->
+    <section class="screen">
+      <div class="bar">
+        <span class="chip" id="stateChip">● IDLE</span>
+        <span class="chip">Profil: HYDRO</span>
+      </div>
+      <div class="grid">
+        <div class="tile">
+          <div class="muted">Température</div>
+          <div class="big" id="tVal">24.0°C</div>
+        </div>
+        <div class="tile">
+          <div class="muted">Humidité</div>
+          <div class="big" id="hVal">55%</div>
+        </div>
+        <div class="tile">
+          <div class="muted">TDS/PPM</div>
+          <div class="big" id="ppmVal">780 ppm</div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="tile">
+          <div class="muted">LED</div>
+          <div class="big" id="ledVal">60%</div>
+        </div>
+        <div class="tile">
+          <div class="muted">Ventilos</div>
+          <div class="big" id="fanVal">1200 RPM</div>
+        </div>
+        <div class="tile">
+          <div class="muted">Pompe</div>
+          <div class="big" id="pumpVal">ON</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Canvas de simulation -->
+    <section>
+      <canvas id="sim" width="900" height="520"></canvas>
+      <div class="shots" id="shots"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  // ---- DOM
+  const sim = document.getElementById('sim');
+  const ctx = sim.getContext('2d');
+
+  const el = {
+    led: $('#led'), hue: $('#hue'), fan: $('#fan'), water: $('#water'),
+    pump: $('#pump'), autoGrow: $('#autoGrow'), noise: $('#noise'),
+    tSet: $('#tSet'), hSet: $('#hSet'),
+    tVal: $('#tVal'), hVal: $('#hVal'), ppmVal: $('#ppmVal'),
+    ledVal: $('#ledVal'), fanVal: $('#fanVal'), pumpVal: $('#pumpVal'),
+    start: $('#start'), stop: $('#stop'), snapshot: $('#snapshot'), reset: $('#reset'),
+    stateChip: $('#stateChip'), shots: $('#shots')
+  };
+
+  function $(q){ return document.querySelector(q); }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function randn(n){ return (Math.random()*2-1)*n; }
+
+  // ---- État
+  const state = {
+    running: true,
+    t: 24.0,
+    h: 55.0,
+    ppm: 780,
+    plant: 0.35, // 0..1
+    fanPhase: 0,
+    waterLevel: parseInt(el.water.value,10)/100,
+    lastTime: performance.now()
+  };
+
+  // ---- UI updates
+  function updateScreen(){
+    el.tVal.textContent = state.t.toFixed(1) + '°C';
+    el.hVal.textContent = Math.round(state.h) + '%';
+    el.ppmVal.textContent = Math.round(state.ppm) + ' ppm';
+    el.ledVal.textContent = el.led.value + '%';
+    el.fanVal.textContent = el.fan.value + ' RPM';
+    el.pumpVal.textContent = el.pump.checked ? 'ON' : 'OFF';
+
+    const mode = state.running ? '● RUN' : '● IDLE';
+    el.stateChip.textContent = mode;
+    el.stateChip.style.color = state.running ? '#0b0' : '#ccc';
+  }
+
+  // ---- Physique simple
+  function step(dt){
+    const noise = parseInt(el.noise.value,10);
+
+    // temp/hum ajustent légèrement vers setpoint, influencées par LED/ventilos
+    const tSet = parseFloat(el.tSet.value);
+    const hSet = parseFloat(el.hSet.value);
+    const led = parseInt(el.led.value,10)/100;
+    const fan = parseInt(el.fan.value,10)/3000;
+
+    // tendance vers consigne
+    state.t += (tSet - state.t)*0.15*dt + randn(noise*0.01);
+    state.h += (hSet - state.h)*0.12*dt + randn(noise*0.05);
+
+    // LED chauffe un peu
+    state.t += led*0.5*dt;
+
+    // ventilo refroidit et assèche un peu
+    state.t -= fan*0.6*dt;
+    state.h -= fan*0.4*dt;
+
+    // PPM diminue doucement si pompe (circulation/filtration)
+    if (el.pump.checked){
+      state.ppm += randn(noise*0.8) - 0.5*dt;
+    } else {
+      state.ppm += randn(noise*0.8) + 0.1*dt;
+    }
+    state.ppm = clamp(state.ppm, 300, 1400);
+
+    // niveau d’eau suit le slider
+    state.waterLevel = parseInt(el.water.value,10)/100;
+
+    // croissance plante (optionnelle)
+    if (el.autoGrow.checked){
+      const lightFactor = led * (0.6 + 0.4*Math.cos((parseInt(el.hue.value,10)/360)*Math.PI*2)); // pseudo spectre
+      const moisture = clamp(state.h/100, 0, 1);
+      const growth = (lightFactor*0.4 + moisture*0.3) * dt * 0.02;
+      state.plant = clamp(state.plant + growth - 0.001*dt, 0.1, 1.0);
+    }
+
+    // phase ventilo
+    state.fanPhase += dt * (parseInt(el.fan.value,10) / 60); // RPM -> deg/s approx
+  }
+
+  // ---- Dessin
+  function draw(){
+    const w = sim.width, h = sim.height;
+    ctx.clearRect(0,0,w,h);
+
+    // fond
+    const g = ctx.createLinearGradient(0,0,0,h);
+    g.addColorStop(0,'#0a0e18'); g.addColorStop(1,'#0f1422');
+    ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+
+    // Boîte
+    const bx = 80, by = 60, bw = w-160, bh = h-140;
+    ctx.fillStyle = '#121826'; rounded(bx,by,bw,bh,18,true,false);
+    ctx.strokeStyle = '#263149'; ctx.lineWidth = 2; rounded(bx,by,bw,bh,18,false,true);
+
+    // Vitre
+    const vx = bx+30, vy = by+30, vw = bw-60, vh = bh-120;
+    ctx.fillStyle = '#0a0f1a'; rounded(vx,vy,vw,vh,14,true,false);
+    ctx.strokeStyle = '#1e2742'; ctx.lineWidth = 2; rounded(vx,vy,vw,vh,14,false,true);
+
+    // LEDs en haut (couleur selon hue & intensité)
+    const hue = parseInt(el.hue.value,10);
+    const intensity = parseInt(el.led.value,10)/100;
+    ctx.save();
+    ctx.globalAlpha = clamp(0.25 + intensity*0.65, 0, 1);
+    const ledGrad = ctx.createLinearGradient(vx,vy,vx,vy+40);
+    ledGrad.addColorStop(0, `hsl(${hue}, 90%, 70%)`);
+    ledGrad.addColorStop(1, `rgba(0,0,0,0)`);
+    ctx.fillStyle = ledGrad;
+    ctx.fillRect(vx, vy, vw, 60);
+    ctx.restore();
+
+    // Eau
+    const waterLevelPx = vy + vh - vh*state.waterLevel;
+    const waterGrad = ctx.createLinearGradient(0,waterLevelPx,0,vy+vh);
+    waterGrad.addColorStop(0, 'rgba(70,140,255,0.5)');
+    waterGrad.addColorStop(1, 'rgba(30,90,200,0.7)');
+    ctx.fillStyle = waterGrad;
+    ctx.fillRect(vx+4, waterLevelPx, vw-8, vy+vh-waterLevelPx);
+
+    // Vagues simples
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(vx, waterLevelPx);
+    const amp = 6 + 10*intensity;
+    const k = performance.now()*0.002;
+    for(let x=vx; x<=vx+vw; x+=8){
+      const y = waterLevelPx + Math.sin((x*0.03)+k)*amp;
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(vx+vw, vy+vh);
+    ctx.lineTo(vx, vy+vh);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(120,170,255,0.25)';
+    ctx.fill();
+    ctx.restore();
+
+    // Plante (tiges + feuilles stylisées)
+    const cx = vx + vw/2;
+    const baseY = vy + vh - 8;
+    const height = vh*0.65*state.plant;
+    drawPlant(cx, baseY, height, hue);
+
+    // Ventilos (2)
+    drawFan(vx+60, vy+30, 14, state.fanPhase);
+    drawFan(vx+vw-60, vy+30, 14, -state.fanPhase);
+
+    // Afficheurs à droite sur la boîte
+    drawSidePanel(bx+bw-140, by+40, 120, 120);
+
+    // Légende bas
+    ctx.fillStyle = '#9aa4b2';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.fillText('Appuie sur 📸 pour enregistrer une image de la simulation.', bx, by+bh+28);
+  }
+
+  function rounded(x,y,w,h,r,fill,stroke){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function drawFan(x,y,r,phase){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(phase*0.15);
+    for(let i=0;i<3;i++){
+      ctx.rotate((Math.PI*2)/3);
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.quadraticCurveTo(r*1.2, r*0.5, r*0.1, r*2.2);
+      ctx.quadraticCurveTo(-r*0.4, r*1.0, 0, 0);
+      ctx.fillStyle = 'rgba(200,220,255,0.7)';
+      ctx.fill();
+    }
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(x,y,r*0.4,0,Math.PI*2);
+    ctx.fillStyle='#e6eefc'; ctx.fill();
+    ctx.strokeStyle='#263149'; ctx.stroke();
+  }
+
+  function drawPlant(cx, baseY, h, hue){
+    const stalk = Math.max(2, h*0.02);
+    ctx.strokeStyle = `hsl(${(hue+60)%360}, 60%, 65%)`;
+    ctx.lineWidth = stalk;
+    ctx.beginPath(); ctx.moveTo(cx, baseY); ctx.quadraticCurveTo(cx-20, baseY-h*0.4, cx, baseY-h); ctx.stroke();
+
+    // feuilles
+    const leaves = 5 + Math.floor(h/40);
+    for(let i=0;i<leaves;i++){
+      const y = baseY - (h*(i/(leaves+1)));
+      const len = 30 + (i*4);
+      const side = i%2===0 ? 1 : -1;
+      ctx.beginPath();
+      ctx.moveTo(cx, y);
+      ctx.quadraticCurveTo(cx+side*len*0.5, y-10, cx+side*len, y-2);
+      ctx.quadraticCurveTo(cx+side*len*0.5, y+8, cx, y+2);
+      ctx.closePath();
+      ctx.fillStyle = `hsl(${(hue+80)%360}, 55%, ${45+i*2}%)`;
+      ctx.fill();
+    }
+  }
+
+  function drawSidePanel(x,y,w,h){
+    ctx.save();
+    ctx.fillStyle = '#0f1422'; rounded(x,y,w,h,10,true,false);
+    ctx.strokeStyle = '#263149'; ctx.stroke();
+
+    ctx.fillStyle = '#9aa4b2'; ctx.font = '11px system-ui, sans-serif';
+    ctx.fillText('Écran (résumé)', x+10, y+16);
+
+    ctx.font = 'bold 18px system-ui, sans-serif'; ctx.fillStyle = '#e8eef7';
+    ctx.fillText(state.t.toFixed(1)+'°C', x+10, y+42);
+
+    ctx.font = '14px system-ui, sans-serif';
+    ctx.fillText('Humi: '+Math.round(state.h)+'%', x+10, y+66);
+    ctx.fillText('PPM: '+Math.round(state.ppm), x+10, y+88);
+
+    const pump = el.pump.checked ? 'ON' : 'OFF';
+    ctx.fillStyle = pump==='ON' ? '#86efac' : '#fecaca';
+    ctx.fillText('Pompe: '+pump, x+10, y+110);
+
+    ctx.restore();
+  }
+
+  // ---- Boucle
+  function loop(){
+    const now = performance.now();
+    const dt = clamp((now - state.lastTime)/1000, 0, 0.1);
+    state.lastTime = now;
+    if (state.running) { step(dt); }
+    updateScreen();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // ---- Interactions
+  [el.led, el.hue, el.fan, el.water, el.pump, el.autoGrow, el.noise, el.tSet, el.hSet]
+    .forEach(i => i.addEventListener('input', updateScreen));
+
+  el.start.onclick = ()=>{state.running = true;};
+  el.stop.onclick = ()=>{state.running = false;};
+  el.reset.onclick = ()=>{
+    state.t = 24; state.h = 55; state.ppm = 780; state.plant = 0.35; state.fanPhase=0;
+    el.led.value=60; el.hue.value=200; el.fan.value=1200; el.water.value=65; el.pump.checked=true; el.autoGrow.checked=false;
+    updateScreen();
+  };
+
+  el.snapshot.onclick = ()=>{
+    const url = sim.toDataURL('image/png');
+    const img = new Image(); img.src = url;
+    const wrap = document.createElement('div'); wrap.className='shot';
+    wrap.appendChild(img);
+    const a = document.createElement('a');
+    a.textContent = 'Télécharger'; a.href = url; a.download = `autobox-shot-${Date.now()}.png`;
+    a.style.display='block'; a.style.marginTop='6px'; a.style.color='#6ee7b7'; a.style.textDecoration='none';
+    wrap.appendChild(a);
+    el.shots.prepend(wrap);
+  };
+
+  updateScreen();
+  loop();
+})();
+</script>
+</body>
+</html>
