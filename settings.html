@@ -2,89 +2,47 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Réglages Nova ⚙️</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 2em;
-      background: #f4f4f4;
-      color: #333;
-    }
-    h1 {
-      color: #222;
-    }
-    label {
-      display: block;
-      margin-top: 1em;
-    }
-    input, select {
-      padding: 0.5em;
-      width: 100%;
-      max-width: 300px;
-    }
-    button {
-      margin-top: 1.5em;
-      padding: 0.7em 1.2em;
-      background: #6ee7b7;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      border-radius: 5px;
-    }
-    button:hover {
-      background: #34d399;
-    }
-    a {
-      display: inline-block;
-      margin-top: 2em;
-      text-decoration: none;
-      color: #2563eb;
-      font-weight: bold;
-    }
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    h1 { color: #333; }
+    label { display: block; margin-top: 1em; }
+    input { padding: 0.5em; width: 100%; max-width: 400px; }
+    button { margin-top: 1em; padding: 0.5em 1em; cursor: pointer; }
+    .ok { color: green; font-weight: bold; }
   </style>
 </head>
 <body>
   <h1>⚙️ Réglages Nova</h1>
+  <p>Entre ton URL Vercel (backend) ici :</p>
 
-  <label for="apiUrl">URL du Backend :</label>
-  <input type="text" id="apiUrl" placeholder="https://yarrow-ai-server.vercel.app" />
-
-  <label for="voice">Voix :</label>
-  <select id="voice">
-    <option value="default">Par défaut</option>
-    <option value="male">Voix masculine</option>
-    <option value="female">Voix féminine</option>
-  </select>
-
-  <label for="rate">Vitesse de lecture :</label>
-  <input type="range" id="rate" min="0.7" max="1.4" step="0.1" value="1" />
+  <label for="apiUrl">URL du backend :</label>
+  <input type="text" id="apiUrl" placeholder="https://mon-backend.vercel.app">
 
   <button onclick="saveSettings()">💾 Sauvegarder</button>
+  <p id="status"></p>
 
-  <br>
-  <a href="./index.html">⬅️ Retour à Nova</a>
+  <p><a href="index.html">⬅️ Retour à Nova</a></p>
 
   <script>
-    function saveSettings() {
-      const apiUrl = document.getElementById("apiUrl").value.trim();
-      const voice = document.getElementById("voice").value;
-      const rate = document.getElementById("rate").value;
-
-      if(apiUrl) {
-        localStorage.setItem("API_BASE", apiUrl);
-      }
-      localStorage.setItem("VOICE", voice);
-      localStorage.setItem("RATE", rate);
-
-      alert("✅ Réglages sauvegardés !");
+    // Charger l’URL déjà sauvegardée si elle existe
+    const input = document.getElementById("apiUrl");
+    const saved = localStorage.getItem("API_BASE");
+    if (saved) {
+      input.value = saved;
     }
 
-    // Charger les réglages sauvegardés
-    window.onload = () => {
-      document.getElementById("apiUrl").value = localStorage.getItem("API_BASE") || "";
-      document.getElementById("voice").value = localStorage.getItem("VOICE") || "default";
-      document.getElementById("rate").value = localStorage.getItem("RATE") || 1;
-    };
+    // Fonction pour sauvegarder l’URL
+    function saveSettings() {
+      const url = input.value.trim();
+      if (!url) {
+        document.getElementById("status").innerText = "⚠️ Merci d’entrer une URL valide.";
+        return;
+      }
+      localStorage.setItem("API_BASE", url);
+      document.getElementById("status").innerHTML = "✅ Sauvegardé !<br>URL actuelle : <b>" + url + "</b>";
+    }
   </script>
 </body>
 </html>
