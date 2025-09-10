@@ -2,65 +2,282 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nova Assistant 🚀</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    h1 { color: #333; }
-    input { padding: 0.5em; width: 250px; }
-    button { padding: 0.5em; margin-left: 0.5em; }
-    pre { background: #f4f4f4; padding: 1em; border-radius: 5px; }
+    :root{
+      --bg:#0f1115; --panel:#151923; --text:#e8ecf1; --muted:#9aa4b2;
+      --accent:#6ee7ff; --accent-2:#8b5cf6; --danger:#ff6b6b;
+      --bubble-user:#22304a; --bubble-ai:#1b2536;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:linear-gradient(180deg,#0b0e13,#121623);
+      color:var(--text); font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;
+      min-height:100svh; display:flex; align-items:center; justify-content:center; padding:16px;
+    }
+    .app{
+      width:min(900px,100%); background:color-mix(in hsl, var(--panel) 92%, transparent);
+      border:1px solid #202634; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.45);
+      overflow:hidden; display:grid; grid-template-rows:auto 1fr auto;
+    }
+    header{
+      padding:14px 18px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #202634;
+      background:linear-gradient(90deg, rgba(107,201,255,.12), rgba(139,92,246,.10));
+    }
+    .logo{
+      width:40px;height:40px; border-radius:12px; background:
+        conic-gradient(from 210deg,var(--accent),var(--accent-2));
+      display:grid; place-items:center; color:#0b0e13; font-weight:700;
+      box-shadow:0 0 0 2px #0f1115 inset;
+    }
+    h1{font-size:18px; margin:0}
+    .sub{color:var(--muted); font-size:12px}
+    .chat{
+      padding:16px; overflow:auto; display:flex; flex-direction:column; gap:10px;
+      background:radial-gradient(1200px 600px at 80% -10%, rgba(107,201,255,.08), transparent),
+                 radial-gradient(800px 400px at 10% 120%, rgba(139,92,246,.08), transparent);
+    }
+    .row{display:flex; gap:10px; align-items:flex-end; max-width:100%}
+    .row.ai{justify-content:flex-start}
+    .row.user{justify-content:flex-end}
+    .avatar{
+      flex:0 0 36px; width:36px;height:36px;border-radius:10px;background:#1f2431;display:grid;place-items:center;
+      border:1px solid #242a3a;color:#9dd9ff;
+    }
+    .bubble{
+      max-width:min(80ch,75%); padding:12px 14px;border-radius:14px;word-wrap:break-word;white-space:pre-wrap;
+      border:1px solid #263048;
+    }
+    .ai .bubble{background:var(--bubble-ai)}
+    .user .bubble{background:var(--bubble-user)}
+    .typing{display:inline-flex; gap:6px}
+    .dot{width:6px;height:6px;border-radius:50%; background:#9aa4b2; opacity:.6; animation:b 1.2s infinite}
+    .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+    @keyframes b{0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-4px)}}
+    footer{border-top:1px solid #202634; background:#0f131c}
+    .controls{display:grid; gap:10px; padding:12px}
+    .inputbar{
+      display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center;
+    }
+    input[type="text"]{
+      width:100%; padding:14px 16px; border-radius:12px; border:1px solid #263048;
+      background:#0d111a; color:var(--text); outline:none;
+    }
+    input::placeholder{color:#7c889a}
+    button{
+      padding:14px 16px; border-radius:12px; border:1px solid #2a3650; cursor:pointer;
+      background:linear-gradient(180deg, var(--accent) 0%, #5fcaff 60%, #51b2ff 100%);
+      color:#0a0d12; font-weight:700; letter-spacing:.2px;
+      box-shadow:0 8px 24px rgba(110,231,255,.25), inset 0 -6px 0 rgba(0,0,0,.08);
+    }
+    button.secondary{
+      background:#161c29; color:#dbe7ff; border-color:#2a3550;
+      box-shadow:none;
+    }
+    button:disabled{opacity:.6; cursor:not-allowed}
+    .ttsbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    select, input[type="range"]{
+      background:#0d111a; border:1px solid #263048; color:var(--text);
+      padding:10px; border-radius:10px;
+    }
+    label{font-size:12px; color:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>Parle avec Nova 🚀</h1>
+  <div class="app">
+    <header>
+      <div class="logo">N</div>
+      <div>
+        <h1>Nova Assistant</h1>
+        <div class="sub">Chat + Voix – Nova te lit ses réponses ✨</div>
+      </div>
+    </header>
 
-  <input id="question" type="text" placeholder="Écris ta question ici..." />
-  <button onclick="askNova()">Envoyer</button>
+    <main id="chat" class="chat"></main>
 
-  <p><strong>Réponse de Nova :</strong></p>
-  <pre id="answer">...</pre>
+    <footer>
+      <div class="controls">
+        <div class="inputbar">
+          <input id="question" type="text" placeholder="Écris ta question… (Entrée pour envoyer)" />
+          <button id="micBtn" class="secondary" title="Reconnaissance vocale">🎙️ Parler</button>
+          <button id="sendBtn">Envoyer</button>
+        </div>
+
+        <div class="ttsbar">
+          <label>Voix :
+            <select id="voiceSelect"></select>
+          </label>
+          <label>Vitesse :
+            <input id="rate" type="range" min="0.7" max="1.4" value="1" step="0.05"/>
+          </label>
+          <label>Volume :
+            <input id="volume" type="range" min="0" max="1" value="1" step="0.05"/>
+          </label>
+          <button id="muteBtn" class="secondary">🔊 Son activé</button>
+        </div>
+      </div>
+    </footer>
+  </div>
 
   <script>
-    const API_BASE = "https://yarrow-ai-server.vercel.app"; // ton backend Vercel
+    // 🔗 Ton backend (modifie si besoin)
+    const API_BASE = "https://yarrow-ai-server.vercel.app";
 
-    async function askNova(questionText) {
-      const answerBox = document.getElementById("answer");
-      const question = questionText || document.getElementById("question").value;
+    // ——— Elements
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("question");
+    const sendBtn = document.getElementById("sendBtn");
+    const micBtn  = document.getElementById("micBtn");
+    const voiceSelect = document.getElementById("voiceSelect");
+    const rateInput = document.getElementById("rate");
+    const volumeInput = document.getElementById("volume");
+    const muteBtn = document.getElementById("muteBtn");
 
-      if (!question) {
-        answerBox.innerText = "⚠️ Écris une question avant d’envoyer.";
+    // ——— Chat helpers
+    function addMsg(role, text, opts={}){
+      const row = document.createElement("div");
+      row.className = "row " + (role === "user" ? "user" : "ai");
+      const avatar = document.createElement("div"); avatar.className="avatar";
+      avatar.textContent = role === "user" ? "🧑" : "🤖";
+      const bubble = document.createElement("div"); bubble.className="bubble";
+      bubble.textContent = text || "";
+      row.appendChild(avatar); row.appendChild(bubble);
+      if (opts.typing){
+        bubble.innerHTML = `<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
+        row.dataset.typing = "1";
+      }
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+      return bubble;
+    }
+    function replaceTypingWith(text){
+      const last = [...chat.querySelectorAll('.row')].reverse().find(r => r.dataset.typing==="1");
+      if (!last) return;
+      const bubble = last.querySelector('.bubble');
+      bubble.textContent = text;
+      delete last.dataset.typing;
+    }
+
+    // ——— TTS (Web Speech Synthesis)
+    const synth = window.speechSynthesis;
+    let voices = [];
+    let speakingEnabled = true;
+
+    function populateVoices(){
+      voices = synth.getVoices().sort((a,b)=>{
+        const af = a.lang.startsWith("fr") ? 0 : 1;
+        const bf = b.lang.startsWith("fr") ? 0 : 1;
+        return af - bf || a.lang.localeCompare(b.lang);
+      });
+      voiceSelect.innerHTML = "";
+      if (voices.length === 0){
+        const opt = document.createElement("option");
+        opt.textContent = "(aucune voix trouvée)";
+        voiceSelect.appendChild(opt);
         return;
       }
+      voices.forEach(v=>{
+        const opt = document.createElement("option");
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})`;
+        voiceSelect.appendChild(opt);
+      });
+      // Préférer FR si dispo
+      const firstFR = voices.find(v => v.lang.toLowerCase().startsWith("fr"));
+      if (firstFR) voiceSelect.value = firstFR.name;
+    }
+    populateVoices();
+    if (speechSynthesis && speechSynthesis.onvoiceschanged !== undefined){
+      speechSynthesis.onvoiceschanged = populateVoices;
+    }
 
-      // ✅ Indicateur de chargement
-      answerBox.innerText = "⏳ Nova réfléchit...";
+    function speak(text){
+      if (!speakingEnabled) return;
+      if (!synth) return;
+      try{
+        synth.cancel(); // stop any previous
+        const u = new SpeechSynthesisUtterance(text);
+        const v = voices.find(v => v.name === voiceSelect.value);
+        if (v) u.voice = v;
+        u.rate = parseFloat(rateInput.value || "1");
+        u.volume = parseFloat(volumeInput.value || "1");
+        u.lang = (v && v.lang) || "fr-FR";
+        synth.speak(u);
+      }catch(e){ /* no-op */ }
+    }
 
-      try {
-        const response = await fetch(`${API_BASE}/api/ask`, {
+    muteBtn.addEventListener("click", ()=>{
+      speakingEnabled = !speakingEnabled;
+      if (!speakingEnabled) { speechSynthesis.cancel(); }
+      muteBtn.textContent = speakingEnabled ? "🔊 Son activé" : "🔇 Son coupé";
+    });
+
+    // ——— ASR (Reconnaissance) si dispo (Chrome/Android)
+    let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recog;
+    if (!Recognition){
+      micBtn.disabled = true;
+      micBtn.title = "Micro non disponible sur ce navigateur";
+    } else {
+      recog = new Recognition();
+      recog.lang = "fr-FR";
+      recog.interimResults = false;
+      recog.maxAlternatives = 1;
+
+      recog.onresult = (e)=>{
+        const text = e.results[0][0].transcript;
+        input.value = text;
+        sendBtn.click();
+      };
+      recog.onerror = ()=>{ micBtn.disabled = false; micBtn.textContent="🎙️ Parler"; };
+      recog.onend = ()=>{ micBtn.disabled = false; micBtn.textContent="🎙️ Parler"; };
+
+      micBtn.addEventListener("click", ()=>{
+        micBtn.disabled = true; micBtn.textContent = "🎙️…";
+        try{ recog.start(); }catch{}
+      });
+    }
+
+    // ——— API call
+    async function askNova(question, site="hydro"){
+      if (!question || !question.trim()) return;
+      addMsg("user", question);
+      addMsg("ai", "", { typing:true });
+      sendBtn.disabled = true;
+
+      try{
+        const res = await fetch(`${API_BASE}/api/ask`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: question,
-            site: "hydro"
-          })
+          body: JSON.stringify({ question, site })
         });
-
-        const data = await response.json();
-        if (data.ok) {
-          answerBox.innerText = data.answer || "Pas de réponse reçue.";
+        const data = await res.json();
+        if (data.ok){
+          const answer = data.answer || "Hmm… je n’ai rien reçu 🤔";
+          replaceTypingWith(answer);
+          speak(answer);
         } else {
-          answerBox.innerText = "❌ Erreur : " + (data.error || "Réponse invalide");
+          replaceTypingWith("❌ Erreur : " + (data.error || "Réponse invalide"));
         }
-      } catch (err) {
-        answerBox.innerText = "❌ Erreur de connexion : " + err.message;
+      } catch (err){
+        replaceTypingWith("❌ Réseau : " + err.message);
+      } finally {
+        sendBtn.disabled = false;
       }
     }
 
-    // 🚀 Test automatique au chargement de la page
-    window.onload = () => {
-      askNova("Bonjour Nova, es-tu là ?");
-    };
+    // ——— UX
+    sendBtn.addEventListener("click", ()=>{
+      const q = input.value.trim();
+      input.value = "";
+      askNova(q);
+      input.focus();
+    });
+    input.addEventListener("keydown", (e)=>{ if (e.key === "Enter") sendBtn.click(); });
+
+    // message d’accueil
+    addMsg("ai", "Salut 👋 Je suis Nova. Pose-moi une question — je te réponds à voix haute.");
   </script>
 </body>
 </html>
