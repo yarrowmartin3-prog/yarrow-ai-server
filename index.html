@@ -33,6 +33,42 @@
     }
     h1{font-size:18px; margin:0}
     .sub{color:var(--muted); font-size:12px}
+    /* --- Avatar (yeux + bouche) --- */
+    #face{
+      margin-left:auto; margin-right:4px;
+      width:64px; height:64px; position:relative;
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,.3));
+    }
+    #face .head{
+      width:100%; height:100%; border-radius:16px;
+      background: radial-gradient(120% 120% at 30% 20%, #1f2740, #131a2a);
+      border:1px solid #263048; position:relative; overflow:hidden;
+    }
+    .eye{
+      width:18px; height:18px; border-radius:50%;
+      background:#e9f2ff; position:absolute; top:18px;
+      border:1px solid #2a344a;
+    }
+    .eye.left{ left:14px; } .eye.right{ right:14px; }
+    .pupil{
+      width:8px; height:8px; border-radius:50%;
+      background:#0c1220; position:absolute; top:5px; left:5px;
+      transition: transform .08s linear;
+    }
+    .mouth{
+      width:30px; height:10px; border-radius:0 0 14px 14px / 0 0 10px 10px;
+      background:#f25f7a; position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+      box-shadow: inset 0 -6px 0 rgba(0,0,0,.25);
+    }
+    body[data-talking="1"] .mouth{
+      animation: talky .30s infinite;
+    }
+    @keyframes talky{
+      0%,100%{ height:8px; }
+      40%{ height:22px; }
+      70%{ height:14px; }
+    }
+    /* --- Chat --- */
     .chat{
       padding:16px; overflow:auto; display:flex; flex-direction:column; gap:10px;
       background:radial-gradient(1200px 600px at 80% -10%, rgba(107,201,255,.08), transparent),
@@ -41,11 +77,16 @@
     .row{display:flex; gap:10px; align-items:flex-end; max-width:100%}
     .row.ai{justify-content:flex-start}
     .row.user{justify-content:flex-end}
-    .avatar{flex:0 0 36px; width:36px;height:36px;border-radius:10px;background:#1f2431;display:grid;place-items:center;
-      border:1px solid #242a3a;color:#9dd9ff;}
-    .bubble{max-width:min(80ch,75%); padding:12px 14px;border-radius:14px;word-wrap:break-word;white-space:pre-wrap;
-      border:1px solid #263048;}
-    .ai .bubble{background:var(--bubble-ai)} .user .bubble{background:var(--bubble-user)}
+    .avatar{
+      flex:0 0 36px; width:36px;height:36px;border-radius:10px;background:#1f2431;display:grid;place-items:center;
+      border:1px solid #242a3a;color:#9dd9ff;
+    }
+    .bubble{
+      max-width:min(80ch,75%); padding:12px 14px;border-radius:14px;word-wrap:break-word;white-space:pre-wrap;
+      border:1px solid #263048;
+    }
+    .ai .bubble{background:var(--bubble-ai)}
+    .user .bubble{background:var(--bubble-user)}
     .typing{display:inline-flex; gap:6px}
     .dot{width:6px;height:6px;border-radius:50%; background:#9aa4b2; opacity:.6; animation:b 1.2s infinite}
     .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
@@ -83,6 +124,15 @@
       <div>
         <h1>Nova Assistant</h1>
         <div class="sub">Chat + Voix – optimisé iPhone ✨</div>
+      </div>
+
+      <!-- Avatar animé de Nova -->
+      <div id="face">
+        <div class="head">
+          <div class="eye left"><div class="pupil"></div></div>
+          <div class="eye right"><div class="pupil"></div></div>
+          <div class="mouth"></div>
+        </div>
       </div>
     </header>
 
@@ -155,14 +205,44 @@
       delete last.dataset.typing;
     }
 
-    // ——— iOS detection
+    // Avatar control
+    function setTalking(on){
+      document.body.dataset.talking = on ? "1" : "";
+    }
+    function updatePupils(x, y){
+      const face = document.getElementById("face");
+      if (!face) return;
+      const rect = face.getBoundingClientRect();
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top + rect.height/2;
+      let dx = (x - cx) / (rect.width/2);
+      let dy = (y - cy) / (rect.height/2);
+      const clamp = (v)=>Math.max(-1, Math.min(1, v));
+      dx = clamp(dx); dy = clamp(dy);
+      const tx = dx * 4, ty = dy * 4;
+      document.querySelectorAll(".pupil").forEach(p=>{
+        p.style.transform = `translate(${tx}px, ${ty}px)`;
+      });
+    }
+    window.addEventListener("pointermove", (e)=> updatePupils(e.clientX, e.clientY));
+    window.addEventListener("pointerdown", (e)=> updatePupils(e.clientX, e.clientY));
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener("deviceorientation", (e)=>{
+        const ww = window.innerWidth, wh = window.innerHeight;
+        const x = ww/2 + (e.gamma||0) * 5;
+        const y = wh/2 + (e.beta||0)  * 2.5;
+        updatePupils(x, y);
+      }, true);
+    }
+
+    // iOS detection
     const isIOS = /iP(hone|ad|od)/i.test(navigator.userAgent);
 
-    // ——— TTS (queue + iPhone priming)
+    // TTS queue + iPhone priming
     const synth = window.speechSynthesis;
     let voices = [];
     let speakingEnabled = true;
-    let ttsPrimed = !isIOS; // sur iOS, il faut cliquer le bouton pour passer à true
+    let ttsPrimed = !isIOS;
     const speakQueue = [];
     let speakingNow = false;
 
@@ -194,16 +274,19 @@
     }
 
     function primeAudio(){
-      // Petite phrase “silencieuse” pour déverrouiller la lecture sur iOS
       try{
         synth.cancel();
         const u = new SpeechSynthesisUtterance(" ");
-        u.volume = 0; // silence
-        u.onend = ()=>{ ttsPrimed = true; primeBtn.disabled = true; primeBtn.textContent = "🔈 Voix activée"; primeBadge.textContent = "La voix est prête.";}
+        u.volume = 0;
+        u.onend = ()=>{
+          ttsPrimed = true;
+          primeBtn.disabled = true;
+          primeBtn.textContent = "🔈 Voix activée";
+          primeBadge.textContent = "La voix est prête.";
+        };
         synth.speak(u);
       }catch(e){}
     }
-
     primeBtn.addEventListener("click", primeAudio);
     if (!isIOS){
       primeBtn.style.display = "none";
@@ -211,19 +294,16 @@
     }
 
     function splitSentences(text){
-      // Découpe en phrases simples pour iOS
       return (text || "").split(/(?<=[\.\!\?…])\s+/).filter(Boolean);
     }
-
     function enqueueSpeak(text){
       if (!speakingEnabled || !synth) return;
       splitSentences(text).forEach(p => speakQueue.push(p));
       drainQueue();
     }
-
     function drainQueue(){
       if (speakingNow || speakQueue.length===0) return;
-      if (!ttsPrimed && isIOS) return; // attendre le clic “Activer la voix”
+      if (!ttsPrimed && isIOS) return;
       speakingNow = true;
       const sentence = speakQueue.shift();
       const u = new SpeechSynthesisUtterance(sentence);
@@ -232,24 +312,34 @@
       u.rate = parseFloat(rateInput.value || "1");
       u.volume = parseFloat(volumeInput.value || "1");
       u.lang = (v && v.lang) || "fr-FR";
-      u.onend = ()=>{ speakingNow = false; drainQueue(); };
-      u.onerror = ()=>{ speakingNow = false; drainQueue(); };
-      try{ synth.speak(u); }catch{ speakingNow=false; }
+      u.onend = ()=>{
+        speakingNow = false;
+        drainQueue();
+        if (speakQueue.length === 0 && !speakingNow) setTalking(false);
+      };
+      u.onerror = ()=>{
+        speakingNow = false;
+        drainQueue();
+        if (speakQueue.length === 0 && !speakingNow) setTalking(false);
+      };
+      try{
+        setTalking(true);
+        synth.speak(u);
+      }catch{ speakingNow=false; setTalking(false); }
     }
-
     function stopSpeaking(){
       try{ synth.cancel(); }catch{}
       speakQueue.length = 0;
       speakingNow = false;
+      setTalking(false);
     }
-
     muteBtn.addEventListener("click", ()=>{
       speakingEnabled = !speakingEnabled;
       if (!speakingEnabled) stopSpeaking();
       muteBtn.textContent = speakingEnabled ? "🔊 Son activé" : "🔇 Son coupé";
     });
 
-    // ——— ASR si dispo (Chrome/Android)
+    // ASR si dispo (Chrome/Android uniquement)
     let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recog;
     if (!Recognition){
@@ -275,7 +365,7 @@
       });
     }
 
-    // ——— API call
+    // Appel API
     async function askNova(question, site="hydro"){
       if (!question || !question.trim()) return;
       addMsg("user", question);
@@ -292,7 +382,7 @@
         if (data.ok){
           const answer = data.answer || "Hmm… je n’ai rien reçu 🤔";
           replaceTypingWith(answer);
-          enqueueSpeak(answer); // 🔊 lecture phrase par phrase
+          enqueueSpeak(answer);
         } else {
           replaceTypingWith("❌ Erreur : " + (data.error || "Réponse invalide"));
         }
@@ -313,7 +403,7 @@
     input.addEventListener("keydown", (e)=>{ if (e.key === "Enter") sendBtn.click(); });
 
     // Message d’accueil
-    addMsg("ai", isIOS
+    addMsg("ai", /iP(hone|ad|od)/i.test(navigator.userAgent)
       ? "Salut 👋 Je suis Nova. Sur iPhone, tape d’abord « 🔈 Activer la voix », puis pose-moi une question."
       : "Salut 👋 Je suis Nova. Pose-moi une question ; je te réponds à voix haute !");
   </script>
