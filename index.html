@@ -199,8 +199,6 @@
 
         if(res.ok && data && data.ok){
           bubble(false, escapeHtml(data.answer || "Pas de réponse."));
-          // lire automatiquement (si tu veux auto-lecture, décommente)
-          // speak(data.answer || "");
           lastAnswer = data.answer || "";
         }else{
           const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
@@ -250,7 +248,7 @@
     }
 
     function speak(text){
-      if(!("speechSynthesis" in window)){ flash("Synthèse vocale non disponible sur ce navigateur."); return; }
+      if(!("speechSynthesis" in window)){ flash("Synthèse vocale non disponible."); return; }
       const t = text || lastAnswer || "";
       if(!t){ flash("Rien à lire."); return; }
       window.speechSynthesis.cancel();
@@ -260,7 +258,6 @@
       if(v) u.voice = v;
       u.rate = parseFloat(rateInp.value || "1");
       u.volume = parseFloat(volumeInp.value || "1");
-      u.onerror = e => console.debug("TTS error", e);
       speechSynthesis.speak(u);
     }
     function stopSpeak(){ if("speechSynthesis" in window) speechSynthesis.cancel(); }
@@ -274,19 +271,16 @@
 
     function ensureRecognizer(){
       const Cls = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!Cls){ flash("🎤 Reconnaissance vocale non disponible ici."); return null; }
+      if(!Cls){ flash("🎤 Reconnaissance vocale non dispo."); return null; }
       if(rec) return rec;
       rec = new Cls();
-      rec.lang = "fr-CA"; // ajuste si tu veux
+      rec.lang = "fr-CA"; 
       rec.interimResults = false;
       rec.maxAlternatives = 1;
 
       rec.onresult = (e)=>{
         const txt = (e.results[0] && e.results[0][0] && e.results[0][0].transcript) || "";
-        if(txt){
-          input.value = txt;
-          askNova(txt);
-        }
+        if(txt){ input.value = txt; askNova(txt); }
       };
       rec.onerror = (e)=>{ recognizing = false; micBtn.textContent = "🎙️ Parler"; flash("Micro : " + (e.error||"erreur")); };
       rec.onend = ()=>{ recognizing = false; micBtn.textContent = "🎙️ Parler"; };
@@ -298,15 +292,9 @@
       if(!r) return;
       if(!recognizing){
         try{
-          r.start();
-          recognizing = true;
-          micBtn.textContent = "🛑 Stop";
-        }catch(e){
-          flash("Impossible de démarrer le micro.");
-        }
-      }else{
-        try{ r.stop(); }catch{}
-      }
+          r.start(); recognizing = true; micBtn.textContent = "🛑 Stop";
+        }catch(e){ flash("Impossible de démarrer le micro."); }
+      }else{ try{ r.stop(); }catch{} }
     };
   </script>
 </body>
