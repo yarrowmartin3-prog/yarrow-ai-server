@@ -24,9 +24,9 @@
   <script>
     const API_BASE = "https://yarrow-ai-server.vercel.app"; // ton backend Vercel
 
-    async function askNova() {
-      const question = document.getElementById("question").value;
+    async function askNova(questionText) {
       const answerBox = document.getElementById("answer");
+      const question = questionText || document.getElementById("question").value;
 
       if (!question) {
         answerBox.innerText = "⚠️ Écris une question avant d’envoyer.";
@@ -39,7 +39,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             question: question,
-            site: "hydro" // tu peux changer ce tag si besoin
+            site: "hydro"
           })
         });
 
@@ -53,6 +53,11 @@
         answerBox.innerText = "❌ Erreur de connexion : " + err.message;
       }
     }
+
+    // 🚀 Test automatique au chargement de la page
+    window.onload = () => {
+      askNova("Bonjour Nova, es-tu là ?");
+    };
   </script>
 </body>
 </html>
