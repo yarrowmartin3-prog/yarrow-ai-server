@@ -5,21 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nova Assistant 🚀</title>
 
-  <!-- 🔧 Progressive Web App -->
-  <link rel="manifest" href="/manifest.webmanifest">
+  <!-- PWA -->
+  <link rel="manifest" href="/yarrow-ai-server/manifest.webmanifest">
   <meta name="theme-color" content="#0e1118">
-  <script defer src="/sw-register.js"></script>
+  <script defer src="/yarrow-ai-server/sw-register.js"></script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 2em;
-      background: #f4f4f4;
+      background: #f9f9f9;
     }
     h1 { color: #222; }
     input { padding: 0.5em; width: 250px; }
     button { padding: 0.5em; margin-left: 0.5em; }
-    pre { background: #eee; padding: 1em; border-radius: 5px; }
+    pre { background: #f4f4f4; padding: 1em; border-radius: 5px; }
   </style>
 </head>
 <body>
@@ -47,10 +47,7 @@
         const response = await fetch(`${API_BASE}/api/ask`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: question,
-            site: "hydro"
-          })
+          body: JSON.stringify({ question, site: "hydro" })
         });
 
         const data = await response.json();
