@@ -1,21 +1,5 @@
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open("nova-cache").then(cache => {
-      return cache.addAll([
-        "/",
-        "/index.html",
-        "/settings.html",
-        "/simulator.html",
-        "/manifest.webmanifest"
-      ]);
-    })
-  );
-});
-
-self.addEventListener("fetch", event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
-  );
-});
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/yarrow-ai-server/service-worker.js")
+    .then(() => console.log("✅ Service Worker enregistré"))
+    .catch(err => console.error("❌ Erreur SW:", err));
+}
