@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Yarrow AI Server — Autogrow Box (Simulation)</title>
+  <link rel="stylesheet" href="./sim.css" />
+  <meta name="description" content="Simulation d'une boîte Autogrow : pH, EC, T°, humidité, pompe, lumière." />
+</head>
+<body>
+  <header class="top">
+    <h1>Autogrow Box — Simulation</h1>
+    <p>Cycle nutriments, capteurs (pH/EC/T°/HR), croissance virtuelle.</p>
+  </header>
+
+  <section class="controls">
+    <button id="start">Démarrer</button>
+    <button id="pause">Pause</button>
+    <button id="reset">Réinitialiser</button>
+    <label>Vitesse
+      <select id="speed">
+        <option value="1">1×</option>
+        <option value="2">2×</option>
+        <option value="5">5×</option>
+        <option value="10">10×</option>
+      </select>
+    </label>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h3>Capteurs</h3>
+      <ul id="sensors"></ul>
+    </div>
+
+    <div class="card">
+      <h3>Actionneurs</h3>
+      <ul id="actuators"></ul>
+    </div>
+
+    <div class="card">
+      <h3>Croissance</h3>
+      <canvas id="growth" width="560" height="220" aria-label="Graphique croissance"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>Journal</h3>
+      <div id="log" class="log"></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <small>Yarrow LiberA Cultiva — Yarrow AI Server</small>
+  </footer>
+
+  <script src="./sim.js"></script>
+</body>
+</html>
