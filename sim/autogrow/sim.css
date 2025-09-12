@@ -1,0 +1,15 @@
+:root { --gap:14px; --radius:14px; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:system-ui, Arial, sans-serif; background:#fafafa; color:#111; }
+.top { padding:18px; text-align:center; }
+.controls { display:flex; gap:var(--gap); padding:0 16px 12px; flex-wrap:wrap; justify-content:center; }
+.controls button, .controls select { padding:10px 14px; border:1px solid #ddd; border-radius:10px; background:#fff; }
+.grid { display:grid; gap:var(--gap); padding:0 16px 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.card { background:#fff; border:1px solid #eee; border-radius:var(--radius); padding:14px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.card h3{ margin:0 0 8px; }
+#sensors li, #actuators li { padding:6px 0; border-bottom:1px dashed #eee; }
+#sensors li:last-child, #actuators li:last-child { border-bottom:none; }
+.log { height:180px; overflow:auto; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; background:#f7f7f7; border-radius:10px; padding:10px; }
+.foot { padding:14px; text-align:center; color:#666; border-top:1px solid #eee; }
