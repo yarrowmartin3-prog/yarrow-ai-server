@@ -16,6 +16,18 @@
     noise: () => (Math.random() - 0.5) * 0.05
   };
 
+  // Hypothèses simples pour les “ajouts”
+  const effects = {
+    phPlus:  () => { state.ph += 0.25; logLine('Dose pH+ appliquée (+0.25)'); },
+    phMinus: () => { state.ph -= 0.25; logLine('Dose pH- appliquée (−0.25)'); },
+    addWater: () => {
+      // l’eau dilue l’EC et rapproche le pH vers 7.0
+      state.ec = Math.max(0.3, state.ec * 0.85);
+      state.ph += (7.0 - state.ph) * 0.20;
+      logLine('Ajout eau: EC ×0.85, pH → vers 7.0');
+    }
+  };
+
   // --- UI ---
   const ulS = document.getElementById('sensors');
   const ulA = document.getElementById('actuators');
@@ -26,6 +38,11 @@
   const btnPause = document.getElementById('pause');
   const btnReset = document.getElementById('reset');
   const speedSel = document.getElementById('speed');
+
+  // Nouveaux boutons
+  const btnPhPlus = document.getElementById('btn-ph-plus');
+  const btnPhMinus = document.getElementById('btn-ph-minus');
+  const btnAddWater = document.getElementById('btn-add-water');
 
   const fmt = (n, d=1) => Number(n).toFixed(d);
 
@@ -40,17 +57,15 @@
     ctx.strokeStyle = '#889';
     ctx.beginPath(); ctx.moveTo(40,10); ctx.lineTo(40,h-30); ctx.lineTo(w-10,h-30); ctx.stroke();
 
-    // courbe croissance
+    // courbe simple (niveau de croissance courant)
     ctx.strokeStyle = '#06c';
     ctx.beginPath();
-    let x0 = 40, y0 = h-30;
     for (let x=0; x<=100; x++) {
-      const y = h-30 - (state.growth * (h-50))/100; // point courant seulement (simple indicateur)
-      ctx.lineTo(x0+x*5, y);
+      const y = h-30 - (state.growth * (h-50))/100;
+      ctx.lineTo(40 + x*5, y);
     }
     ctx.stroke();
 
-    // valeur texte
     ctx.fillStyle='#111';
     ctx.fillText(`Croissance: ${fmt(state.growth,1)} %`, 50, 20);
   }
@@ -80,26 +95,23 @@
     }
 
     // dynamique simple des capteurs
-    // pH dérive légèrement, corrigée quand pompe ON (supposée équilibrée)
     state.ph += state.noise();
     if (state.pumpOn) state.ph += (6.0 - state.ph) * 0.05;
 
-    // EC augmente doucement quand pompe ON, baisse sinon
     state.ec += (state.pumpOn ? +0.01 : -0.005);
     state.ec = Math.max(0.3, Math.min(2.5, state.ec));
 
-    // Temp/Humidité fluctuent
-    state.temp += state.noise()*2;
-    state.rh += state.noise()*4;
+    state.temp += (Math.random()-0.5)*0.1*state.speed;
+    state.rh += (Math.random()-0.5)*0.4*state.speed;
     state.temp = Math.max(16, Math.min(28, state.temp));
     state.rh = Math.max(35, Math.min(85, state.rh));
 
-    // croissance dépend d’un “score” d’environnement
+    // croissance dépend d’un score environnemental
     const scorePH = 1 - Math.min(Math.abs(state.ph-6.0)/0.8, 1);
     const scoreEC = 1 - Math.min(Math.abs(state.ec-1.5)/0.6, 1);
     const scoreT  = 1 - Math.min(Math.abs(state.temp-22)/6, 1);
     const env = Math.max(0, (scorePH + scoreEC + scoreT) / 3);
-    const growthRate = env * 0.08;   // % par seconde sim (à 1×)
+    const growthRate = env * 0.08;   // %/s à 1×
     state.growth = Math.min(100, state.growth + growthRate * dt);
 
     state.t += dt;
@@ -123,6 +135,11 @@
     logLine('Réinitialisation'); renderPanels();
   };
   speedSel.onchange = ()=>{ state.speed = Number(speedSel.value||1); logLine(`Vitesse ${state.speed}×`); };
+
+  // Nouveaux boutons d’action
+  btnPhPlus.onclick  = ()=>{ effects.phPlus();  renderPanels(); };
+  btnPhMinus.onclick = ()=>{ effects.phMinus(); renderPanels(); };
+  btnAddWater.onclick= ()=>{ effects.addWater(); renderPanels(); };
 
   renderPanels();
   requestAnimationFrame(loop);
