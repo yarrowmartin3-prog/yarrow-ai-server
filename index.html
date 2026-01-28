@@ -1,65 +1,57 @@
+ Voici un exemple de code HTML5 structuré avec Tailwind CSS pour la page d'accueil de votre produit "yarrow-ai-server". Le code est optimisé pour un design sombre et futuriste (Cyberpunk).
+
+
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nova Assistant 🚀</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="/yarrow-ai-server/manifest.webmanifest">
-  <meta name="theme-color" content="#0e1118">
-  <script defer src="/yarrow-ai-server/sw-register.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 2em;
-      background: #f9f9f9;
-    }
-    h1 { color: #222; }
-    input { padding: 0.5em; width: 250px; }
-    button { padding: 0.5em; margin-left: 0.5em; }
-    pre { background: #f4f4f4; padding: 1em; border-radius: 5px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova yarrow-ai-server</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-  <h1>Parle avec Nova 🚀</h1>
+<body class="bg-black text-white h-screen font-mono antialiased">
 
-  <input id="question" type="text" placeholder="Écris ta question ici..." />
-  <button onclick="askNova()">Envoyer</button>
+    <!-- Header -->
+    <header class="container mx-auto flex justify-between items-center py-16">
+        <div class="flex space-x-4">
+            <img src="logo.svg" alt="Nova logo" class="h-8">
+            <nav>
+                <!-- Ajoutez votre navigation ici -->
+            </nav>
+        </div>
+    </header>
 
-  <p><strong>Réponse de Nova :</strong></p>
-  <pre id="answer">...</pre>
+    <!-- Hero Section -->
+    <section class="container mx-auto flex flex-col items-center justify-center h-screen">
+        <h1 class="text-5xl font-bold mb-4">yarrow-ai-server</h1>
+        <p class="text-2xl text-gray-300 mb-8">Une solution d'IA avancée pour votre entreprise.</p>
+        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">COMMANDER</button>
+    </section>
 
-  <script>
-    const API_BASE = "https://yarrow-ai-server.vercel.app"; // ton backend Vercel
+    <!-- Features -->
+    <section class="container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 py-16">
+        <div class="bg-gray-800 p-6 rounded-lg shadow">
+            <!-- Automatisation -->
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg shadow">
+            <!-- Sécurité -->
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg shadow">
+            <!-- Performance -->
+        </div>
+    </section>
 
-    async function askNova() {
-      const question = document.getElementById("question").value;
-      const answerBox = document.getElementById("answer");
+    <!-- Footer -->
+    <footer class="container mx-auto flex justify-center items-center py-16">
+        <p class="text-gray-400">&copy; Nova Sentinel 2023</p>
+    </footer>
 
-      if (!question) {
-        answerBox.innerText = "⚠️ Écris une question avant d’envoyer.";
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE}/api/ask`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, site: "hydro" })
-        });
-
-        const data = await response.json();
-        if (data.ok) {
-          answerBox.innerText = data.answer || "Pas de réponse reçue.";
-        } else {
-          answerBox.innerText = "❌ Erreur : " + (data.error || "Réponse invalide");
-        }
-      } catch (err) {
-        answerBox.innerText = "❌ Erreur de connexion : " + err.message;
-      }
-    }
-  </script>
-</body>
+        <div onclick="alert('Lien Stripe/Crypto généré')" style="position:fixed; bottom:20px; right:20px; background:#00ff41; color:black; padding:15px; border-radius:50px; font-weight:bold; cursor:pointer; z-index:999;">
+            💳 ACHETER / INVESTIR
+        </div>
+        </body>
+        
 </html>
+
+
+Ce code HTML vous fournit une structure de base pour votre page d'accueil. Vous devrez ajouter le contenu de chaque section en utilisant les classes Tailwind CSS pour créer un design Cyberpunk et sombre.
